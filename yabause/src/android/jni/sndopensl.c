@@ -61,12 +61,6 @@ SNDOpenSLSetVolume
 
 extern JavaVM * yvm;
 
-jobject gtrack = NULL;
-
-jclass cAudioTrack = NULL;
-
-jmethodID mWrite = NULL;
-
 
 // engine interfaces
 static SLObjectItf engineObject = NULL;
@@ -95,11 +89,29 @@ int mbufferSizeInBytes;
 static u16 *stereodata16[MAX_BUFFER_CNT];
 static int currentpos = 0;
 static int soundbufsize=0;
-static int soundoffset=0;
+static int soundoffset[MAX_BUFFER_CNT]={0};
 static u8 soundvolume;
 static u8 soundmaxvolume;
 
+#define MAX_QUEUE (32)
+static int queue_head = 0;
+static int queue_tail = 0;
+static int index_queue[MAX_QUEUE]={0};
 
+void push_index( int index )
+{
+   index_queue[queue_tail] = index;
+   queue_tail++;      
+   if( queue_tail >= MAX_QUEUE ) queue_tail = 0;
+}
+
+int pop_index()
+{
+   int val = index_queue[queue_head];
+   queue_head++;      
+   if( queue_head >= MAX_QUEUE ) queue_head = 0;
+   return val;
+}
 
 // this callback handler is called every time a buffer finishes playing
 void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
@@ -107,30 +119,11 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     assert(bq == bqPlayerBufferQueue);
     assert(NULL == context);
     
-    int playpos = currentpos-1;
-    
-   
-    
-          isplaying[currentpos] = 1;
-      currentpos++;
-      if( currentpos >= MAX_BUFFER_CNT ) { currentpos = 0; }
+  
+   int playpos = pop_index();
+   //printf("bqPlayerCallback %d,%d",playpos,soundoffset[playpos]);
+   soundoffset[playpos] = 0;
 
-
-/*    
-   if (soundoffset > mbufferSizeInBytes) {
-
-      // here we only enqueue one buffer because it is a long clip,
-      // but for streaming playback we would typically enqueue at least 2 buffers to start
-      SLresult result;
-      result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, stereodata16[currentpos], soundoffset);
-      if (SL_RESULT_SUCCESS != result) {
-            return;
-      }
-      currentpos++;
-      if( currentpos > MAX_BUFFER_CNT ) { currentpos = 0; }
-      soundoffset = 0;  
-   }
-*/
 }
 
 
@@ -142,9 +135,9 @@ static int SNDOpenSLInit(void)
    
     // configure audio source
     SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
-    SLDataFormat_PCM format_pcm = {SL_DATAFORMAT_PCM, 1, SL_SAMPLINGRATE_44_1,
+    SLDataFormat_PCM format_pcm = {SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1,
         SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
-        SL_SPEAKER_FRONT_CENTER, SL_BYTEORDER_LITTLEENDIAN};
+        (SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT), SL_BYTEORDER_LITTLEENDIAN};
     SLDataSource audioSrc = {&loc_bufq, &format_pcm};
    
    SLresult result;
@@ -231,7 +224,7 @@ int InitSoundBuff()
    int i;
    
    // 5msec( 2byte * 44100Hz * 0.005 )
-   mbufferSizeInBytes = 2940*8; //2 * 44100 * 2 *0.016;
+   mbufferSizeInBytes = 2940*4; //2 * 44100 * 2 *0.016;
    soundbufsize = mbufferSizeInBytes*2;
 
    for( i=0; i< MAX_BUFFER_CNT; i++ )
@@ -239,14 +232,14 @@ int InitSoundBuff()
       if ((stereodata16[i] = (u16 *)malloc(soundbufsize)) == NULL)
          return -1;
       memset(stereodata16[i], 0, soundbufsize);
+      soundoffset[i] = 0;   
    }
    
-   soundoffset = 0;   
    soundvolume = 100;
    soundmaxvolume = 100;
    
    printf("InitSoundBuff %d,%d\n",mbufferSizeInBytes,soundbufsize);
-   printf("SNDOpenSLInit %d,%08x,%08X,%08x,%08x",soundoffset,stereodata16[0],(int)(stereodata16[0]) + soundbufsize, stereodata16[1],(int)(stereodata16[1]) + soundbufsize);
+   printf("SNDOpenSLInit %08x,%08X,%08x,%08x",stereodata16[0],(int)(stereodata16[0]) + soundbufsize, stereodata16[1],(int)(stereodata16[1]) + soundbufsize);
    return 0;
    
 }
@@ -285,8 +278,6 @@ static int SNDOpenSLChangeVideoFormat(int vertfreq)
 static void sdlConvert32uto16s(s32 *srcL, s32 *srcR, s16 *dst, u32 len) {
    u32 i;
 
-   printf("sdlConvert32uto16s start %08X", (u32)dst );
-   
    for (i = 0; i < len; i++)
    {
       // Left Channel
@@ -297,7 +288,7 @@ static void sdlConvert32uto16s(s32 *srcL, s32 *srcR, s16 *dst, u32 len) {
       srcL++;
       dst++;
       // Right Channel
-	  *srcR = ( *srcR *soundvolume ) / soundmaxvolume;
+      *srcR = ( *srcR *soundvolume ) / soundmaxvolume;
       if (*srcR > 0x7FFF) *dst = 0x7FFF;
       else if (*srcR < -0x8000) *dst = -0x8000;
       else *dst = *srcR;
@@ -305,8 +296,6 @@ static void sdlConvert32uto16s(s32 *srcL, s32 *srcR, s16 *dst, u32 len) {
       dst++;
    }
    
-   printf("sdlConvert32uto16s end %08X", (u32)dst );   
-
 }
 
 static void SNDOpenSLUpdateAudio(u32 *leftchanbuffer, u32 *rightchanbuffer, u32 num_samples)
@@ -315,29 +304,30 @@ static void SNDOpenSLUpdateAudio(u32 *leftchanbuffer, u32 *rightchanbuffer, u32 
 
 
    u32 copy1size=0;
+   int nextpos;
 
    copy1size = (num_samples * sizeof(s16) * 2);
-   printf("SNDOpenSLUpdateAudio %08X,%08X,%08X",currentpos,soundoffset,copy1size);
+   //printf("SNDOpenSLUpdateAudio %08X,%08X,%08X",currentpos,soundoffset[currentpos],copy1size);
 
-   sdlConvert32uto16s((s32 *)leftchanbuffer, (s32 *)rightchanbuffer, (s16 *)(((u8 *)stereodata16[currentpos])+soundoffset), copy1size / sizeof(s16) / 2);
+   sdlConvert32uto16s((s32 *)leftchanbuffer, (s32 *)rightchanbuffer, (s16 *)(((u8 *)stereodata16[currentpos])+soundoffset[currentpos] ), copy1size / sizeof(s16) / 2);
 
-   soundoffset += copy1size;
+   soundoffset[currentpos] += copy1size;
    
-   if (soundoffset >= mbufferSizeInBytes) {
+   if (soundoffset[currentpos] >= mbufferSizeInBytes) {
 
       // here we only enqueue one buffer because it is a long clip,
       // but for streaming playback we would typically enqueue at least 2 buffers to start
       SLresult result;
-      
-      isplaying[currentpos] = 1;
-      currentpos++;
-      if( currentpos >= MAX_BUFFER_CNT ) { currentpos = 0; }
-      result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, stereodata16[currentpos], soundoffset);
+      push_index(currentpos);
+      result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, stereodata16[currentpos], soundoffset[currentpos]);
       if (SL_RESULT_SUCCESS != result) {
          printf("Fail to Add queue");
             return;
       }
-      soundoffset = 0; 
+      nextpos = currentpos+1;
+      if( nextpos >= MAX_BUFFER_CNT ) { nextpos = 0; }
+      currentpos = nextpos;
+      
    }
    
 }
@@ -349,9 +339,7 @@ static u32 SNDOpenSLGetAudioSpace(void)
    
    // printf("SNDOpenSLGetAudioSpace %d,%d",soundoffset,mbufferSizeInBytes);
    
-   if( isplaying[currentpos] == 1 ) return 0;
-   
-   int val = (mbufferSizeInBytes-soundoffset);
+   int val = (mbufferSizeInBytes-soundoffset[currentpos]);
    if( val < 0 ) return 0;
    return val;
 }

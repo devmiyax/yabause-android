@@ -18,6 +18,8 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 		assets/yabause_data.zip
 		jni/yui.c
 		jni/miniegl.h
+		jni/sndaudiotrack.c
+        jni/sndaudiotrack.h
 		jni/sndopensl.c
 		jni/sndopensl.h
 		src/org/yabause/android/Config.java
@@ -89,6 +91,8 @@ add_custom_command(
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/libyabause.a"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/yui.c"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/miniegl.h"
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.c"
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.h"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.c"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.h"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
