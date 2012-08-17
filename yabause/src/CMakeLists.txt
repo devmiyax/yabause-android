@@ -14,8 +14,8 @@ set(yabause_SOURCES
 	peripheral.c profile.c
 	scu.c sh2core.c sh2d.c sh2idle.c sh2int.c sh2trace.c smpc.c snddummy.c
 	titan/titan.c
-	vdp1.c vdp2.c vdp2debug.c vidogl.c vidshared.c vidsoft.c
-	yabause.c ygl.c yglshader.c)
+	vdp1.c vdp2.c vdp2debug.c vidogl.c vidshared.c vidsoft.c ygles2.c 
+	yabause.c yglshaderes2.c)
 
 # new SCSP
 option(YAB_USE_SCSP2 "Use the new SCSP implementation.")
@@ -228,9 +228,9 @@ if (SH2_DYNAREC)
 			set_source_files_properties(sh2_dynarec/sh2_dynarec.c PROPERTIES COMPILE_FLAGS "-Wno-pointer-to-int-cast -Wno-int-to-pointer-cast")
 			add_definitions(-DSH2_DYNAREC=1)
 			add_definitions(-DANDROID=1)
-			if (YAB_WANT_ARM7)
+#			if (YAB_WANT_ARM7)
 				add_definitions(-DHAVE_ARMv6=1 -DHAVE_ARMv7=1)
-			endif()
+#			endif()
 		endif ()
 	endif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 endif (SH2_DYNAREC)

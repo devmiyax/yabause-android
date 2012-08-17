@@ -3,15 +3,40 @@
       package="org.yabause.android"
       android:versionCode="1"
       android:versionName="0.9.11">
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8"/>
-    <application android:label="@string/app_name" android:icon="@drawable/icon">
-        <activity android:name="Yabause"
-                  android:configChanges="orientation|keyboardHidden"
-                  android:label="@string/app_name">
+    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10"/>
+    <application android:label="@string/app_name" android:icon="@drawable/icon" android:debuggable="true">
+        <activity android:name="org.yabause.android.MainActivity"
+                  android:label="@string/app_name"
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation|keyboardHidden|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="org.yabause.android.MenuActivity"
+                  android:label="@string/app_name">
+        </activity>
+        <activity android:name="org.yabause.android.MenuSettingsInputConfigureButtonsActivity"
+                  android:label="Map Buttons">
+        </activity>
+        <activity android:name="org.yabause.android.FileChooserActivity"
+                  android:label="Select a File">
+        </activity>
+        <activity android:name="org.yabause.android.Yabause"
+                  android:label="@string/app_name"
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation|keyboardHidden|uiMode">
+        </activity>
+        <meta-data android:name="xperiaplayoptimized_content"
+                   android:resource="@drawable/hireslogo" />
+        <meta-data android:name="game_display_name"
+                   android:resource="@string/app_name" />
+        <meta-data android:name="game_icon"
+                   android:resource="@drawable/hireslogo" />
     </application>
+    <uses-feature android:glEsVersion="0x00020000"/>
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+    <uses-permission android:name="android.permission.VIBRATE"></uses-permission>
 </manifest> 

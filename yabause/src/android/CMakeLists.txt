@@ -14,17 +14,38 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 	set(yabause_android_SHADOW
 		AndroidManifest.xml
 		project.properties
+		assets/gpl-license
+		assets/yabause_data.zip
 		jni/yui.c
 		jni/miniegl.h
-		jni/sndaudiotrack.c
-		jni/sndaudiotrack.h
+		jni/sndopensl.c
+		jni/sndopensl.h
+		src/org/yabause/android/Config.java
+		src/org/yabause/android/DataDownloader.java
+		src/org/yabause/android/FileChooserActivity.java
+		src/org/yabause/android/GamePad.java
+		src/org/yabause/android/Globals.java
+		src/org/yabause/android/IFileChooser.java
+		src/org/yabause/android/IScancodeListener.java
+		src/org/yabause/android/MainActivity.java
+		src/org/yabause/android/MenuActivity.java
+		src/org/yabause/android/MenuOption.java
+		src/org/yabause/android/MenuSettingsInputConfigureButtonsActivity.java
+		src/org/yabause/android/OptionArrayAdapter.java
+		src/org/yabause/android/ScancodeDialog.java
 		src/org/yabause/android/Yabause.java
 		src/org/yabause/android/YabauseView.java
-		res/drawable/pad.png
+		res/drawable/hireslogo.png
+		res/drawable/publisherlogo.png
 		res/drawable-hdpi/icon.png
+		res/drawable-hdpi/status.png
 		res/drawable-ldpi/icon.png
+		res/drawable-ldpi/status.png
 		res/drawable-mdpi/icon.png
+		res/drawable-mdpi/status.png
 		res/layout/main.xml
+		res/layout/menu_option.xml
+		res/layout/scancode_dialog.xml
 		res/menu/emulation.xml
 		res/values/strings.xml
 	)
@@ -68,21 +89,42 @@ add_custom_command(
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/libyabause.a"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/yui.c"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/miniegl.h"
-	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.c"
-	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.h"
+	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.c"
+	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.h"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 set(yabause_android_RES
-	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable/pad.png"
+	"${CMAKE_CURRENT_BINARY_DIR}/assets/gpl-license"
+	"${CMAKE_CURRENT_BINARY_DIR}/assets/yabause_data.zip"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable/hireslogo.png"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable/publisherlogo.png"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-hdpi/icon.png"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-hdpi/status.png"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-ldpi/icon.png"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-ldpi/status.png"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-mdpi/icon.png"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/drawable-mdpi/status.png"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/layout/main.xml"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/layout/menu_option.xml"
+	"${CMAKE_CURRENT_BINARY_DIR}/res/layout/scancode_dialog.xml"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/menu/emulation.xml"
 	"${CMAKE_CURRENT_BINARY_DIR}/res/values/strings.xml"
 )
 set(yabause_android_SRC
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/DataDownloader.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/Config.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/FileChooserActivity.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/GamePad.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/Globals.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/IFileChooser.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/IScancodeListener.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/MainActivity.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/MenuActivity.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/MenuOption.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/MenuSettingsInputConfigureButtonsActivity.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/OptionArrayAdapter.java"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/ScancodeDialog.java"
     "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/Yabause.java"
     "${CMAKE_CURRENT_BINARY_DIR}/src/org/yabause/android/YabauseView.java"
 )

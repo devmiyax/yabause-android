@@ -25,6 +25,7 @@
 #include "yabause.h"
 #include "scsp.h"
 #include "vidsoft.h"
+#include "vidogl.h"
 #include "peripheral.h"
 #include "m68kcore.h"
 #include "sh2core.h"
@@ -36,18 +37,21 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-#define _ANDROID_2_2_
+static jclass yclass;
+static jmethodID countFrame;
+
+//#define _ANDROID_2_2_
 #ifdef _ANDROID_2_2_
 #include "miniegl.h"
 #else
 #include <EGL/egl.h>
 #endif
 
-#include <GLES/gl.h>
-#include <GLES/glext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <pthread.h>
 
-#include "sndaudiotrack.h"
+#include "sndopensl.h"
 
 JavaVM * yvm;
 static jobject yabause;
@@ -62,16 +66,21 @@ static char cartpath[256] = "\0";
 EGLDisplay g_Display = EGL_NO_DISPLAY;
 EGLSurface g_Surface = EGL_NO_SURFACE; 
 EGLContext g_Context = EGL_NO_CONTEXT; 
-GLuint g_FrameBuffer = 0;
+GLuint g_FrameBuffer  = 0;
 GLuint g_VertexBuffer = 0;
+GLuint programObject  = 0;
+GLuint positionLoc    = 0;
+GLuint texCoordLoc    = 0;
+GLuint samplerLoc     = 0;
+
 int g_buf_width = -1;
 int g_buf_height = -1;
 pthread_mutex_t g_mtxGlLock = PTHREAD_MUTEX_INITIALIZER;
 float vertices [] = { 
-   0, 0, 0, 0,
-   320, 0, 0, 0, 
-   320, 224, 0, 0, 
-   0, 224, 0, 0
+   -1.0f, 1.0f, 0, 0,
+   1.0f, 1.0f, 0, 0, 
+   1.0f, -1.0f, 0, 0, 
+   -1.0f,-1.0f, 0, 0
 };
 
 
@@ -108,13 +117,14 @@ NULL
 
 SoundInterface_struct *SNDCoreList[] = {
 &SNDDummy,
-&SNDAudioTrack,
+&SNDOpenSL,
 NULL
 };
 
 VideoInterface_struct *VIDCoreList[] = {
 &VIDDummy,
 &VIDSoft,
+&VIDOGL,
 NULL
 };
 
@@ -123,6 +133,16 @@ NULL
 
 /* Override printf for debug*/
 int printf( const char * fmt, ... )
+{
+   va_list ap;
+   va_start(ap, fmt);
+   int result = __android_log_vprint(ANDROID_LOG_INFO, LOG_TAG, fmt, ap);
+   va_end(ap);
+   return result;   
+}
+
+/* Override printf for debug*/
+int xprintf( const char * fmt, ... )
 {
    va_list ap;
    va_start(ap, fmt);
@@ -152,19 +172,20 @@ void YuiSwapBuffers(void)
    int error;
    
    
-   pthread_mutex_lock(&g_mtxGlLock);
+//   pthread_mutex_lock(&g_mtxGlLock);
    if( g_Display == EGL_NO_DISPLAY ) 
    {
-      pthread_mutex_unlock(&g_mtxGlLock);
+//      pthread_mutex_unlock(&g_mtxGlLock);
       return;
    }
 
-   if( eglMakeCurrent(g_Display,g_Surface,g_Surface,g_Context) == EGL_FALSE )
-   {
-         printf( "eglMakeCurrent fail %04x",eglGetError());
-         pthread_mutex_unlock(&g_mtxGlLock);
-         return;
-   }   
+#if 0 
+//   if( eglMakeCurrent(g_Display,g_Surface,g_Surface,g_Context) == EGL_FALSE )
+//   {
+//         printf( "eglMakeCurrent fail %04x",eglGetError());
+//         pthread_mutex_unlock(&g_mtxGlLock);
+//         return;
+//   }   
       
    glClearColor( 0.0f,0.0f,0.0f,1.0f);
    glClear(GL_COLOR_BUFFER_BIT);
@@ -172,19 +193,18 @@ void YuiSwapBuffers(void)
    
    if( g_FrameBuffer == 0 )
    {
-      glEnable(GL_TEXTURE_2D);
       glGenTextures(1,&g_FrameBuffer);
+      glActiveTexture ( GL_TEXTURE0 );
       glBindTexture(GL_TEXTURE_2D, g_FrameBuffer);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);   
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
       error = glGetError();
       if( error != GL_NO_ERROR )
       {
-         printf("gl error %d", error );
+         printf("g_FrameBuffer gl error %04X", error );
          return;
       }
    }else{
@@ -204,7 +224,7 @@ void YuiSwapBuffers(void)
       error = glGetError();
       if( error != GL_NO_ERROR )
       {
-         printf("gl error %d", error );
+         printf("g_VertexBuffer gl error %04X", error );
          return;
       }      
    }else{
@@ -216,19 +236,142 @@ void YuiSwapBuffers(void)
      vertices[6]=vertices[10]=(float)buf_width/1024.f;
      vertices[11]=vertices[15]=(float)buf_height/1024.f;
      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),vertices,GL_STATIC_DRAW);
-     glVertexPointer(2, GL_FLOAT, sizeof(float)*4, 0);
-     glTexCoordPointer(2, GL_FLOAT, sizeof(float)*4, (void*)(sizeof(float)*2));   
-     glEnableClientState(GL_VERTEX_ARRAY);
-     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+     glVertexAttribPointer ( positionLoc, 2, GL_FLOAT,  GL_FALSE, 4 * sizeof(GLfloat), 0 );
+     glVertexAttribPointer ( texCoordLoc, 2, GL_FLOAT,  GL_FALSE, 4 * sizeof(GLfloat), (void*)(sizeof(float)*2) );
+     glEnableVertexAttribArray ( positionLoc );
+     glEnableVertexAttribArray ( texCoordLoc );
      g_buf_width  = buf_width;
      g_buf_height = buf_height;
   }
     
    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+#endif   
    eglSwapBuffers(g_Display,g_Surface);
    
-   pthread_mutex_unlock(&g_mtxGlLock);
+//   pthread_mutex_unlock(&g_mtxGlLock);
 }
+
+
+GLuint LoadShader ( GLenum type, const char *shaderSrc )
+{
+   GLuint shader;
+   GLint compiled;
+   
+   // Create the shader object
+   shader = glCreateShader ( type );
+
+   if ( shader == 0 )
+    return 0;
+
+   // Load the shader source
+   glShaderSource ( shader, 1, &shaderSrc, NULL );
+   
+   // Compile the shader
+   glCompileShader ( shader );
+
+   // Check the compile status
+   glGetShaderiv ( shader, GL_COMPILE_STATUS, &compiled );
+
+   if ( !compiled ) 
+   {
+      GLint infoLen = 0;
+
+      glGetShaderiv ( shader, GL_INFO_LOG_LENGTH, &infoLen );
+      
+      if ( infoLen > 1 )
+      {
+         char* infoLog = malloc (sizeof(char) * infoLen );
+         glGetShaderInfoLog ( shader, infoLen, NULL, infoLog );
+         printf ( "Error compiling shader:\n%s\n", infoLog );            
+         free ( infoLog );
+      }
+
+      glDeleteShader ( shader );
+      return 0;
+   }
+
+   return shader;
+
+}
+
+int InitProgram()
+{
+   GLbyte vShaderStr[] =  
+      "attribute vec4 a_position;   \n"
+      "attribute vec2 a_texCoord;   \n"
+      "varying vec2 v_texCoord;     \n"
+      "void main()                  \n"
+      "{                            \n"
+      "   gl_Position = a_position; \n"
+      "   v_texCoord = a_texCoord;  \n"
+      "}                            \n";
+   
+   GLbyte fShaderStr[] =  
+      "precision mediump float;                            \n"
+      "varying vec2 v_texCoord;                            \n"
+      "uniform sampler2D s_texture;                        \n"
+      "void main()                                         \n"
+      "{                                                   \n"
+      "  gl_FragColor = texture2D( s_texture, v_texCoord );\n"
+      "}                                                   \n";
+
+   GLuint vertexShader;
+   GLuint fragmentShader;
+   GLint linked;
+
+   // Load the vertex/fragment shaders
+   vertexShader = LoadShader ( GL_VERTEX_SHADER, vShaderStr );
+   fragmentShader = LoadShader ( GL_FRAGMENT_SHADER, fShaderStr );
+
+   // Create the program object
+   programObject = glCreateProgram ( );
+   
+   if ( programObject == 0 )
+      return 0;
+
+   glAttachShader ( programObject, vertexShader );
+   glAttachShader ( programObject, fragmentShader );
+
+   // Link the program
+   glLinkProgram ( programObject );
+
+   // Check the link status
+   glGetProgramiv ( programObject, GL_LINK_STATUS, &linked );
+
+   if ( !linked ) 
+   {
+      GLint infoLen = 0;
+
+      glGetProgramiv ( programObject, GL_INFO_LOG_LENGTH, &infoLen );
+      
+      if ( infoLen > 1 )
+      {
+         char* infoLog = malloc (sizeof(char) * infoLen );
+
+         glGetProgramInfoLog ( programObject, infoLen, NULL, infoLog );
+         printf ( "Error linking program:\n%s\n", infoLog );            
+         
+         free ( infoLog );
+      }
+
+      glDeleteProgram ( programObject );
+      return GL_FALSE;
+   }
+
+
+   // Get the attribute locations
+   positionLoc = glGetAttribLocation ( programObject, "a_position" );
+   texCoordLoc = glGetAttribLocation ( programObject, "a_texCoord" );
+   
+   // Get the sampler location
+   samplerLoc = glGetUniformLocation ( programObject, "s_texture" );
+   
+   glUseProgram(programObject);
+
+   
+   return GL_TRUE;
+}
+
 
 int Java_org_yabause_android_YabauseRunnable_initViewport( int width, int height)
 {
@@ -240,21 +383,15 @@ int Java_org_yabause_android_YabauseRunnable_initViewport( int width, int height
    g_Display = eglGetCurrentDisplay();
    g_Surface = eglGetCurrentSurface(EGL_READ);
    g_Context = eglGetCurrentContext();
-
+   
+   printf("init g_Display = %08X,g_Surface = %08x,g_Context=%08x",g_Display,g_Surface,g_Context);
+   
    eglQuerySurface(g_Display,g_Surface,EGL_WIDTH,&swidth);
    eglQuerySurface(g_Display,g_Surface,EGL_HEIGHT,&sheight);
    
+   
+   VIDCore->Resize(swidth,sheight,0);
    glViewport(0,0,swidth,sheight);
-   
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-   glOrthof(0, 320, 224, 0, 1, 0);
-   
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-
-   glMatrixMode(GL_TEXTURE);
-   glLoadIdentity();
    
    glDisable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -264,6 +401,13 @@ int Java_org_yabause_android_YabauseRunnable_initViewport( int width, int height
    printf(glGetString(GL_VERSION));
    printf(glGetString(GL_EXTENSIONS));
    printf(eglQueryString(g_Display,EGL_EXTENSIONS));
+   
+   if( InitProgram() != GL_TRUE )
+   {
+      printf("Fail to init program");
+      return -1;
+   }
+   
    eglSwapInterval(g_Display,0);
    eglMakeCurrent(g_Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
    return 0;
@@ -335,12 +479,32 @@ Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject
     yabauseinit_struct yinit;
     int res;
     void * padbits;
+
     
     if( initEGLFunc() == -1 ) return -1;
+    
+   
 
     yabause = (*env)->NewGlobalRef(env, yab);
     ybitmap = (*env)->NewGlobalRef(env, bitmap);
 
+    jmethodID getCDImage, getBios;
+    jstring filename;
+    yclass = (*env)->GetObjectClass(env, yabause);
+    getCDImage = (*env)->GetStaticMethodID(env, yclass, "getCDImage", "()Ljava/lang/Object;");
+    getBios = (*env)->GetStaticMethodID(env, yclass, "getBios", "()Ljava/lang/Object;");
+    countFrame = (*env)->GetStaticMethodID(env, yclass, "countFrame", "()V");
+
+    filename = (jstring) (*env)->CallStaticObjectMethod( env, yclass, getCDImage );
+    const char *nativeS = (*env)->GetStringUTFChars( env, filename, 0 );
+    strcpy( cdpath, nativeS );
+    
+    (*env)->ReleaseStringUTFChars( env, filename, nativeS );
+
+    filename = (jstring) (*env)->CallStaticObjectMethod( env, yclass, getBios );
+    nativeS = (*env)->GetStringUTFChars( env, filename, 0 );
+    strcpy( biospath, nativeS );
+    (*env)->ReleaseStringUTFChars( env, filename, nativeS );
     yinit.m68kcoretype = M68KCORE_C68K;
     yinit.percoretype = PERCORE_DUMMY;
 #ifdef SH2_DYNAREC
@@ -348,9 +512,12 @@ Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject
 #else
     yinit.sh2coretype = SH2CORE_DEFAULT;
 #endif
-    yinit.vidcoretype = VIDCORE_SOFT;
-    yinit.sndcoretype = SNDCORE_AUDIOTRACK;
-    yinit.cdcoretype = CDCORE_DEFAULT;
+    //yinit.vidcoretype = VIDCORE_SOFT;
+    yinit.vidcoretype = 1;    
+    yinit.sndcoretype = SNDCORE_OPENSL;
+    //yinit.sndcoretype = SNDCORE_DUMMY;
+    //yinit.cdcoretype = CDCORE_DEFAULT;
+    yinit.cdcoretype = CDCORE_ISO;
     yinit.carttype = CART_NONE;
     yinit.regionid = 0;
     yinit.biospath = biospath;
@@ -364,10 +531,20 @@ Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject
 
     PerPortReset();
     padbits = PerPadAdd(&PORTDATA1);
-    PerSetKey(1, PERPAD_LEFT, padbits);
-    PerSetKey(4, PERPAD_UP, padbits);
-    PerSetKey(6, PERPAD_DOWN, padbits);
-    PerSetKey(9, PERPAD_RIGHT, padbits);
+
+    PerSetKey(0, PERPAD_UP, padbits);
+    PerSetKey(1, PERPAD_RIGHT, padbits);
+    PerSetKey(2, PERPAD_DOWN, padbits);
+    PerSetKey(3, PERPAD_LEFT, padbits);
+    PerSetKey(4, PERPAD_RIGHT_TRIGGER, padbits);
+    PerSetKey(5, PERPAD_LEFT_TRIGGER, padbits);
+    PerSetKey(6, PERPAD_START, padbits);
+    PerSetKey(7, PERPAD_A, padbits);
+    PerSetKey(8, PERPAD_B, padbits);
+    PerSetKey(9, PERPAD_C, padbits);
+    PerSetKey(10, PERPAD_X, padbits);
+    PerSetKey(11, PERPAD_Y, padbits);
+    PerSetKey(12, PERPAD_Z, padbits);
 
     ScspSetFrameAccurate(1);
 
@@ -383,7 +560,12 @@ Java_org_yabause_android_YabauseRunnable_deinit( JNIEnv* env )
 void
 Java_org_yabause_android_YabauseRunnable_exec( JNIEnv* env )
 {
-    YabauseExec();
+  
+   if( eglMakeCurrent(g_Display,g_Surface,g_Surface,g_Context) == EGL_FALSE )
+   {
+       printf( "eglMakeCurrent fail %04x",eglGetError());
+   }   
+   YabauseExec();
 }
 
 void

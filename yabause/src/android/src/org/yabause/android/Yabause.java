@@ -22,23 +22,27 @@ package org.yabause.android;
 import java.lang.Runnable;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.graphics.Bitmap;
+import android.view.Gravity;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MenuInflater;
-import android.app.Dialog;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.content.DialogInterface;
-import org.yabause.android.YabauseView;
-import android.widget.ImageView;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.View.OnTouchListener;
+import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 class InputHandler extends Handler {
     private YabauseRunnable yr;
@@ -67,6 +71,7 @@ class YabauseRunnable implements Runnable
     public static native int drawScreen();
     public static native int lockGL();
     public static native int unlockGL();
+    Yabause _yabause;
     
     private boolean inited;
     private boolean paused;
@@ -75,8 +80,19 @@ class YabauseRunnable implements Runnable
     public YabauseRunnable(Yabause yabause, Bitmap bitmap)
     {
         handler = new InputHandler(this);
-        int ok = init(yabause, bitmap);
-        inited = (ok == 0);
+        _yabause = yabause;
+        inited = false;
+    }
+    
+    public void setUp()
+    {
+       if( inited == false )
+       {
+         int ok = init(_yabause, null);
+         inited = (ok == 0);
+       }
+       
+       return ;
     }
 
     public void pause()
@@ -101,12 +117,10 @@ class YabauseRunnable implements Runnable
 
     public void run()
     {
-        if (inited && (! paused))
-        {
-            exec();
-            
-            handler.post(this);
-        }
+      if (inited && (! paused))
+      {
+         exec();
+      }
     }
 
     public boolean paused()
@@ -127,17 +141,76 @@ class YabauseHandler extends Handler {
     }
 }
 
-public class Yabause extends Activity implements OnTouchListener
+public class Yabause extends Activity
 {
     private static final String TAG = "Yabause";
     private YabauseRunnable yabauseThread;
     private YabauseHandler handler;
+    public static int width, height;
+    public static Yabause mSingleton = null;
+
+    // Virtual gamepad
+    public static GamePad mGamePad = null;
+    public static GamePad.GamePadListing mGamePadListing = null;
+    public static int whichPad = 0;
+    public static boolean[] previousButtonStates = new boolean[13];
+    // todo: implement multi-controller and analog
+
+    private static NotificationManager notificationManager = null;
+    // Toast Messages:
+    private static Toast toast = null;
+    private static Runnable toastMessager = null;
+
+    private static int frameCount = -1;
+    private static int fpsRate = 15;
+    private static long lastFPSCheck = 0;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        // paulscode, place an icon into the status bar:
+        if( notificationManager == null )
+            notificationManager = (NotificationManager) getSystemService( Context.NOTIFICATION_SERVICE );
+        int statusIcon = R.drawable.status;
+        CharSequence text = "Yabause is running";
+        CharSequence contentTitle = "Yabause";
+        CharSequence contentText = "Yabause";
+        long when = System.currentTimeMillis();
+        Context context = getApplicationContext();
+
+        Intent intent = new Intent( this, MenuActivity.class );
+        intent.setFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP );
+        PendingIntent contentIntent = PendingIntent.getActivity( this, 0, intent, 0 );
+        Notification notification = new Notification( statusIcon, text, when );
+        notification.flags = Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR;
+        notification.setLatestEventInfo( context, contentTitle, contentText, contentIntent );
+        notificationManager.notify( Globals.NOTIFICATION_ID, notification );
         super.onCreate(savedInstanceState);
+        requestWindowFeature( Window.FEATURE_NO_TITLE );
+        getWindow().setFlags( WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                              WindowManager.LayoutParams.FLAG_FULLSCREEN );
+        getWindow().setFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                              WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics( metrics );
+        if( metrics.widthPixels > metrics.heightPixels )
+        {
+            width = metrics.widthPixels;
+            height = metrics.heightPixels;
+        }
+        else
+        {
+            width = metrics.heightPixels;
+            height = metrics.widthPixels;
+        }
+        Globals.populateControls();
+
+        for( int x = 0; x < 13; x++ )
+        {
+            previousButtonStates[x] = false;
+        }
 
         setContentView(R.layout.main);
 
@@ -146,8 +219,34 @@ public class Yabause extends Activity implements OnTouchListener
         yabauseThread = new YabauseRunnable(this,null);
         view.setYabauseRunnable(yabauseThread);
 
-        ImageView pad = (ImageView) findViewById(R.id.yabause_pad);
-        pad.setOnTouchListener(this);
+        mSingleton = this;
+
+        mGamePad = (GamePad) findViewById( R.id.yabause_pad );
+        mGamePad.setResources( getResources() );
+        mGamePadListing = new GamePad.GamePadListing( Globals.DataDir + "/skins/gamepads/gamepad_list.ini" );
+
+        // make sure the gamepad preferences are loaded;
+        String val = MenuActivity.gui_cfg.get( "GAME_PAD", "show_fps" );
+        if( val != null )
+            Globals.showFPS = ( val.equals( "1" ) ? true : false );
+        val = MenuActivity.gui_cfg.get( "GAME_PAD", "enabled" );
+        if( val != null )
+            Globals.gamepadEnabled = ( val.equals( "1" ) ? true : false );
+        Globals.chosenGamepad = MenuActivity.gui_cfg.get( "GAME_PAD", "which_pad" );
+
+        if( !Globals.gamepadEnabled )
+            mGamePad.loadPad( null );
+        else if( Globals.chosenGamepad != null && Globals.chosenGamepad.length() > 0 )
+            mGamePad.loadPad( Globals.chosenGamepad );
+        else if( mGamePadListing.numPads > 0 )
+            mGamePad.loadPad( mGamePadListing.padNames[0] );
+        else
+        {
+            mGamePad.loadPad( null );
+            Log.v( "Yabause", "No gamepad skins found" );
+        }
+            
+        showToast( "Yabause Started" );
     }
 
     @Override
@@ -188,6 +287,8 @@ public class Yabause extends Activity implements OnTouchListener
             yabauseThread.pause();
             return true;
         case R.id.quit:
+            if( notificationManager != null )
+                notificationManager.cancel( Globals.NOTIFICATION_ID );
             this.finish();
             return true;
         case R.id.resume:
@@ -229,26 +330,59 @@ public class Yabause extends Activity implements OnTouchListener
         return alert;
     }
 
-    public boolean onTouch(View v, MotionEvent event) {
-        int action = event.getActionMasked();
-        float x = event.getX();
-        float y = event.getY();
-        int keyx = (int) ((x - 10) / 30);
-        int keyy = (int) ((y - 10) / 30);
-        int key = (keyx << 2) | keyy;
-        int keya = 0;
-        if (action == event.ACTION_DOWN) {
-            keya = 1;
-        } else if (action == event.ACTION_UP) {
-            keya = 2;
+    public static void keyDown( int code )
+    {
+        if( mSingleton == null )
+            return;
+
+        int val = getButtonVal( code );
+        if( val > -1 )
+            mSingleton.buttonAction( 1, val );
+    }
+    public static void keyUp( int code )
+    {
+        if( mSingleton == null )
+            return;
+
+        int val = getButtonVal( code );
+        if( val > -1 )
+            mSingleton.buttonAction( 2, val );
+    }
+
+    public static int getButtonVal( int code )
+    {
+        if( code == 0 )
+            return -1;
+        // TODO: implement controller 2
+        int x = 0;
+        for( int y = 0; y < 13; y++ )
+        {
+            if( Globals.ctrlr[x][y] == code )
+                return y;
         }
+        return -1;
+    }
 
+    public static void updateVirtualGamePadStates( boolean[] buttons )
+    {
+        if( mSingleton == null )
+            return;
+        for( int x = 0; x < 13; x++ )
+        {
+            if( buttons[x] && !previousButtonStates[x] )
+                mSingleton.buttonAction( 1, x );
+            else if( !buttons[x] && previousButtonStates[x] )
+                mSingleton.buttonAction( 2, x );
+            previousButtonStates[x] = buttons[x];
+        }
+    }
+
+    public void buttonAction( int action, int val )
+    {
         Message message = handler.obtainMessage();
-        message.arg1 = keya;
-        message.arg2 = key;
+        message.arg1 = action;
+        message.arg2 = val;
         yabauseThread.handler.sendMessage(message);
-
-        return true;
     }
 
     private void errorMsg(String msg) {
@@ -257,6 +391,57 @@ public class Yabause extends Activity implements OnTouchListener
         bundle.putString("message", msg);
         message.setData(bundle);
         handler.sendMessage(message);
+    }
+    public static Object getCDImage()
+    {
+        return (Object) Globals.chosenROM;
+    }
+    public static Object getBios()
+    {
+        return (Object) Globals.chosenBIOS;
+    }
+
+    public static void showToast( String message )
+    {
+        if( mSingleton == null )
+            return;
+        if( toast != null )
+            toast.setText( new String( message ) );
+        else
+        {
+            toast = Toast.makeText( mSingleton, new String( message ), Toast.LENGTH_SHORT );
+            toast.setGravity( Gravity.BOTTOM, 0, 0 );
+        }
+        // Toast messages must be run on the UiThread, which looks ugly as hell, but works:
+        if( toastMessager == null )
+            toastMessager = new Runnable()
+                            {
+                                public void run()
+                                {
+                                    if( toast != null )
+                                        toast.show();
+                                }
+                            };
+        mSingleton.runOnUiThread( toastMessager );
+    }
+    public static void countFrame()
+    {
+        if( frameCount < 0 )
+        {
+            frameCount = 0;
+            lastFPSCheck = System.currentTimeMillis();
+        }
+        frameCount++;
+        if( (mGamePad != null && frameCount >= mGamePad.fpsRate) ||
+            (mGamePad == null && frameCount >= fpsRate) )
+        {
+            long currentTime = System.currentTimeMillis();
+            float fFPS = ( (float) frameCount / (float) (currentTime - lastFPSCheck) ) * 1000.0f;
+            if( mGamePad != null )
+                mGamePad.updateFPS( (int) fFPS );
+            frameCount = 0;
+            lastFPSCheck = currentTime;
+        }
     }
 
     static {

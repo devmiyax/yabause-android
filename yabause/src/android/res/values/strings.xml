@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Yabause</string>
+    <string name="connecting_to">Connecting to %s</string>
+    <string name="dl_finished">Finished</string>
+    <string name="dl_from">Downloading data from %s</string>
+    <string name="dl_progress">%1$.0f%% done: file %2$s</string>
+    <string name="download_unneeded">No need to download</string>
+    <string name="error_dl_from">Error downloading data from %s</string>
+    <string name="error_write">Write error (plugged in USB Mass Storage Device mode?) %s</string>
+    <string name="failed_connecting_to">Failed connecting to %s</string>
+    <string name="init">Initializing</string>
 </resources>

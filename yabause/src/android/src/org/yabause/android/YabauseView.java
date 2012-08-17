@@ -37,9 +37,10 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 
-class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, View.OnTouchListener{
+class YabauseView extends SurfaceView implements Callback, Runnable, View.OnKeyListener, View.OnTouchListener{
     private static String TAG = "YabauseView";
     private static final boolean DEBUG = false; 
+    private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
     private int axisX = 0; 
     private int axisY = 0;
@@ -48,7 +49,8 @@ class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, V
     public int[] pointerX = new int[256];
     public int[] pointerY = new int[256];
     
-   private YabauseRunnable _Runnable = null;
+    private YabauseRunnable _Runnable = null;
+    Thread thread;
    
     private EGLContext mEglContext;
     private EGLDisplay mEglDisplay;
@@ -117,8 +119,10 @@ class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, V
             return false;
         }
         mEglConfig = configs[0];
+        
+        int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE };
                 
-        mEglContext = egl.eglCreateContext(mEglDisplay, mEglConfig, EGL10.EGL_NO_CONTEXT, null);
+        mEglContext = egl.eglCreateContext(mEglDisplay, mEglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
         if( mEglContext == EGL10.EGL_NO_CONTEXT ){
             Log.e(TAG, "Fail to Create OpenGL Context");
             return false;
@@ -164,9 +168,29 @@ class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, V
           
         YabauseRunnable.lockGL();
         egl.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext);     
+        _Runnable.setUp();                
         YabauseRunnable.initViewport(width, height); 
         YabauseRunnable.unlockGL();
         
+    }
+    
+    @Override
+    public void run() {
+       
+       try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
+       
+       while(thread!=null)
+       {
+         YabauseRunnable.lockGL();
+         _Runnable.run();
+         YabauseRunnable.unlockGL();
+       }
+       
     }
  
     @Override
@@ -175,21 +199,150 @@ class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, V
              Log.e(TAG, "Fail to Creat4e Surface");
              return ;
         }
+        thread = new Thread(this);
+        thread.start();        
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        
+        thread = null;
     }    
 
     // Key events
     public boolean onKey( View  v, int keyCode, KeyEvent event )
     {
+        if( Yabause.mSingleton == null )
+            return false;
+
+        int key = keyCode;
+        float str = 0;
+        if( keyCode > 255 && Globals.analog_100_64 )
+        {
+            key = (int) ( keyCode / 100 );
+            if( event.getAction() == KeyEvent.ACTION_DOWN )
+                str = ( (float) keyCode - ( (float) key * 100.0f ) );
+        }
+        else if( event.getAction() == KeyEvent.ACTION_DOWN )
+            str = 64.0f;
+        int scancode;
+        if( key < 0 || key > 255 )
+            scancode = 0;
+        else
+            scancode = key;
+        for( int p = 0; p < 2; p++ )
+        {
+            if( Globals.analog_100_64 && ( scancode == Globals.ctrlr[p][Globals.ANALOGR] || scancode == Globals.ctrlr[p][Globals.ANALOGL] ||
+                                           scancode == Globals.ctrlr[p][Globals.ANALOGD] || scancode == Globals.ctrlr[p][Globals.ANALOGU] ) )
+            {
+                if( scancode == Globals.ctrlr[p][Globals.ANALOGR] )
+                    axisX = (int) (80.0f * (str / 64.0f));
+                else if( scancode == Globals.ctrlr[p][Globals.ANALOGL] )
+                    axisX = (int) (-80.0f * (str / 64.0f));
+                else if( scancode == Globals.ctrlr[p][Globals.ANALOGD] )
+                    axisY = (int) (-80.0f * (str / 64.0f));
+                else if( scancode == Globals.ctrlr[p][Globals.ANALOGU] )
+                    axisY = (int) (80.0f * (str / 64.0f));
+                // TODO: implement analog
+                return true;
+            }
+        }
+        if( event.getAction() == KeyEvent.ACTION_DOWN )
+        {
+            if( key == KeyEvent.KEYCODE_MENU )
+                return false;
+            if( key == KeyEvent.KEYCODE_VOLUME_UP ||
+                key == KeyEvent.KEYCODE_VOLUME_DOWN )
+            {
+                if( Globals.volumeKeysDisabled )
+                {
+                    Yabause.keyDown( key );
+                    return true;
+                }
+                return false;
+            }
+            Yabause.keyDown( key );
+            return true;
+        }
+        else if( event.getAction() == KeyEvent.ACTION_UP )
+        {
+            if( key == KeyEvent.KEYCODE_MENU )
+                return false;
+
+            if( key == KeyEvent.KEYCODE_VOLUME_UP ||
+                key == KeyEvent.KEYCODE_VOLUME_DOWN )
+            {
+                if( Globals.volumeKeysDisabled )
+                {
+                    Yabause.keyUp( key );
+                    return true;
+                }
+                return false;
+            }
+            Yabause.keyUp( key );
+            return true;
+        }
         return false;
     }
 
     public boolean onTouch( View v, MotionEvent event )
     {
+        if( Yabause.mSingleton == null )
+            return false;
+        int action = event.getAction();
+        int actionCode = action & MotionEvent.ACTION_MASK;
+        float x = event.getX();
+        float y = event.getY();
+        float p = event.getPressure();
+
+        int maxPid = 0;
+        int pid, i;
+        if( actionCode == MotionEvent.ACTION_POINTER_DOWN )
+        {
+            pid = event.getPointerId( action >> MotionEvent.ACTION_POINTER_ID_SHIFT );
+            if( pid > maxPid )
+                maxPid = pid;
+            pointers[pid] = true;
+        }
+        else if( actionCode == MotionEvent.ACTION_POINTER_UP )
+        {
+            pid = event.getPointerId( action >> MotionEvent.ACTION_POINTER_ID_SHIFT );
+            if( pid > maxPid )
+                maxPid = pid;
+            pointers[pid] = false;
+        }
+        else if( actionCode == MotionEvent.ACTION_DOWN )
+        {
+            for( i = 0; i < event.getPointerCount(); i++ )
+            {
+                pid = event.getPointerId(i);
+                if( pid > maxPid )
+                    maxPid = pid;
+                pointers[pid] = true;
+            }
+        }
+        else if( actionCode == MotionEvent.ACTION_UP ||
+                 actionCode == MotionEvent.ACTION_CANCEL )
+        {
+            for( i = 0; i < 256; i++ )
+            {
+                pointers[i] = false;
+                pointerX[i] = -1;
+                pointerY[i] = -1;
+            }
+        }
+
+        for( i = 0; i < event.getPointerCount(); i++ )
+        {
+            pid = event.getPointerId(i);
+            if( pointers[pid] )
+            {
+                if( pid > maxPid )
+                    maxPid = pid;
+                pointerX[pid] = (int) event.getX(i);
+                pointerY[pid] = (int) event.getY(i);
+            }
+        }
+        Yabause.mGamePad.updatePointers( pointers, pointerX, pointerY, maxPid );
         return true;
     }
     

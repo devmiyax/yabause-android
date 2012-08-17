@@ -395,6 +395,8 @@ int YabauseExec(void) {
 int saved_centicycles;
 #endif
 
+
+
 int YabauseEmulate(void) {
    int oneframeexec = 0;
 
@@ -432,6 +434,7 @@ int YabauseEmulate(void) {
    }
    #endif
 
+   
    while (!oneframeexec)
    {
       PROFILE_START("Total Emulation");
@@ -585,6 +588,8 @@ int YabauseEmulate(void) {
    M68KSync();
 #endif
 
+
+     
    return 0;
 }
 

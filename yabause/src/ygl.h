@@ -18,27 +18,40 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#ifdef HAVE_LIBGL
+#if defined(HAVE_LIBGL) || defined(__ANDROID__) 
+
+#ifdef __ANDROID__
+
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <EGL/egl.h>
+
+#else // __ANDROID__
+
 #ifdef _WIN32
 #include <windows.h>
 #include <GL/gl.h>
 #include "windows/glext.h"
-#endif
+#endif // _WIN32
 
 #ifdef HAVE_LIBSDL
  #ifdef __APPLE__
   #include <SDL/SDL.h>
  #else
   #include "SDL.h"
- #endif
-#endif
+ #endif //  __APPLE__
+#endif // HAVE_LIBSDL
 #ifndef _arch_dreamcast
     #ifdef __APPLE__
         #include <OpenGL/gl.h>
     #else
         #include <GL/gl.h>
     #endif
-#endif
+#endif // _arch_dreamcast
+
+#endif // __ANDROID__
+
+
 #include <stdarg.h>
 #include <string.h>
 
@@ -88,7 +101,8 @@ void YglTMAllocate(YglTexture *, unsigned int, unsigned int, unsigned int *, uns
 
 enum
 {
-   PG_NORMAL=0,
+   PG_NORMAL=1,
+   PG_VDP1_NORMAL,
    PG_VFP1_GOURAUDSAHDING,
    PG_VFP1_STARTUSERCLIP,
    PG_VFP1_ENDUSERCLIP,
@@ -98,6 +112,7 @@ enum
    PG_VDP2_DRAWFRAMEBUFF,    
    PG_VDP2_STARTWINDOW,
    PG_VDP2_ENDWINDOW,    
+   PG_WINDOW,
    PG_MAX,
 };
 
@@ -114,6 +129,10 @@ typedef struct {
    short ux1,uy1,ux2,uy2;
    int blendmode;
    int bwin0,logwin0,bwin1,logwin1,winmode;
+   GLuint vertexp;
+   GLuint texcoordp;
+   GLuint mtxModelView;
+   GLuint mtxTexture;
    int (*setupUniform)(void *);
    int (*cleanupUniform)(void *);
 } YglProgram;
@@ -126,6 +145,11 @@ typedef struct {
    int blendmode;
    YglProgram * prg;
 } YglLevel;
+
+typedef struct
+{
+    GLfloat   m[4][4];
+} YglMatrix;
 
 typedef struct {
    GLuint texture;
@@ -144,7 +168,8 @@ typedef struct {
    int rwidth;
    int rheight;
    int drawframe;
-   GLuint rboid;
+   GLuint rboid_depth;
+   GLuint rboid_stencil;
    GLuint vdp1fbo;
    GLuint vdp1FrameBuff[2];  
    
@@ -153,6 +178,12 @@ typedef struct {
    int win0_vertexcnt;
    int win1v[512*4];
    int win1_vertexcnt;
+   
+   YglMatrix mtxModelView;
+   YglMatrix mtxTexture;
+   
+   YglProgram windowpg;
+   YglProgram renderfb;
 
    YglLevel * levels;
 }  Ygl;
@@ -184,9 +215,22 @@ void YglCacheReset(void);
 // 0.. no belnd, 1.. Alpha, 2.. Add 
 int YglSetLevelBlendmode( int pri, int mode );
 
-int Ygl_uniformVDP2DrawFramebuffer( float from, float to , float * offsetcol );
+int Ygl_uniformVDP2DrawFramebuffer( void * p,float from, float to , float * offsetcol );
 
 void YglNeedToUpdateWindow();
+
+void YglScalef(YglMatrix *result, GLfloat sx, GLfloat sy, GLfloat sz);
+void YglTranslatef(YglMatrix *result, GLfloat tx, GLfloat ty, GLfloat tz);
+void YglRotatef(YglMatrix *result, GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+void YglFrustum(YglMatrix *result, float left, float right, float bottom, float top, float nearZ, float farZ);
+void YglPerspective(YglMatrix *result, float fovy, float aspect, float nearZ, float farZ);
+void YglOrtho(YglMatrix *result, float left, float right, float bottom, float top, float nearZ, float farZ);
+void YglLoadIdentity(YglMatrix *result);
+void YglMatrixMultiply(YglMatrix *result, YglMatrix *srcA, YglMatrix *srcB);
+
+#if defined(__APPLE__) || defined(__ANDROID__)
+
+#else // defined(__APPLE__) || defined(__ANDROID__)
 
 #if 1  // Does anything need this?  It breaks a bunch of prototypes if
        // GLchar is typedef'd instead of #define'd  --AC
@@ -195,9 +239,6 @@ void YglNeedToUpdateWindow();
 #endif
 #endif  // 0
 
-#ifdef __APPLE__
-
-#else
 
 extern GLuint (STDCALL *glCreateProgram)(void);
 extern GLuint (STDCALL *glCreateShader)(GLenum);
@@ -247,9 +288,10 @@ extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 
 #ifdef WIN32
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
-#endif
+#endif // WIN32
+
+#endif // __APPLE__
 
 #endif
 
-#endif
 #endif

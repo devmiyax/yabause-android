@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#ifdef HAVE_LIBGL
+#if defined(HAVE_LIBGL) || defined(__ANDROID__)
 
 #include "vidogl.h"
 #include "vidshared.h"
@@ -2218,14 +2218,15 @@ int _VIDOGLIsFullscreen;
 
 void VIDOGLResize(unsigned int w, unsigned int h, int on)
 {
-   glDeleteTextures(1, &_Ygl->texture);
+//   glDeleteTextures(1, &_Ygl->texture);
 
    _VIDOGLIsFullscreen = on;
-
+#if 0
    if (on)
       YuiSetVideoMode(w, h, 32, 1);
    else
       YuiSetVideoMode(w, h, 32, 0);
+#endif   
 
    GlHeight=h;
    GlWidth=w;
@@ -3076,8 +3077,10 @@ static void Vdp2DrawBackScreen(void)
   
    static unsigned char lineColors[512 * 3];
    static int line[512*4];
+   
+#ifdef __ANDROID__   
 
-
+#else
    if (Vdp2Regs->VRSIZE & 0x8000)
       scrAddr = (((Vdp2Regs->BKTAU & 0x7) << 16) | Vdp2Regs->BKTAL) * 2;
    else
@@ -3098,7 +3101,6 @@ static void Vdp2DrawBackScreen(void)
          line[4*y+2] = vdp2width;
          line[4*y+3] = y;         
       }
-      
       glColorPointer(3, GL_UNSIGNED_BYTE, 0, lineColors);
       glEnableClientState(GL_COLOR_ARRAY);
       glVertexPointer(2, GL_INT, 0, line);
@@ -3106,6 +3108,7 @@ static void Vdp2DrawBackScreen(void)
       glDrawArrays(GL_LINES,0,vdp2height*2);
       glDisableClientState(GL_COLOR_ARRAY);      
       glColor3ub(0xFF, 0xFF, 0xFF);
+
    }
    else
    {
@@ -3130,6 +3133,7 @@ static void Vdp2DrawBackScreen(void)
       glColor3ub(0xFF, 0xFF, 0xFF);
       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
    }
+#endif   
 }
 
 //////////////////////////////////////////////////////////////////////////////
