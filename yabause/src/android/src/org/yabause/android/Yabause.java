@@ -43,6 +43,7 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
+import android.view.Surface;
 
 class InputHandler extends Handler {
     private YabauseRunnable yr;
@@ -67,7 +68,7 @@ class YabauseRunnable implements Runnable
     public static native void exec();
     public static native void press(int key);
     public static native void release(int key);
-    public static native int initViewport( int width, int hieght);
+    public static native int initViewport( Surface sf, int width, int hieght);
     public static native int drawScreen();
     public static native int lockGL();
     public static native int unlockGL();
@@ -81,20 +82,10 @@ class YabauseRunnable implements Runnable
     {
         handler = new InputHandler(this);
         _yabause = yabause;
-        inited = false;
+        int ok = init(_yabause, null);
+        inited = (ok == 0);
     }
     
-    public void setUp()
-    {
-       if( inited == false )
-       {
-         int ok = init(_yabause, null);
-         inited = (ok == 0);
-       }
-       
-       return ;
-    }
-
     public void pause()
     {
         Log.v("Yabause", "pause... should really pause emulation now...");
@@ -217,7 +208,7 @@ public class Yabause extends Activity
         YabauseView view = (YabauseView) findViewById(R.id.yabause_view);
         handler = new YabauseHandler(this);
         yabauseThread = new YabauseRunnable(this,null);
-        view.setYabauseRunnable(yabauseThread);
+        //view.setYabauseRunnable(yabauseThread);
 
         mSingleton = this;
 

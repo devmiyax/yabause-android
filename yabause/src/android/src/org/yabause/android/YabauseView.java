@@ -37,10 +37,8 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 
-class YabauseView extends SurfaceView implements Callback, Runnable, View.OnKeyListener, View.OnTouchListener{
+class YabauseView extends SurfaceView implements Callback, View.OnKeyListener, View.OnTouchListener{
     private static String TAG = "YabauseView";
-    private static final boolean DEBUG = false; 
-    private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
     private int axisX = 0; 
     private int axisY = 0;
@@ -49,14 +47,6 @@ class YabauseView extends SurfaceView implements Callback, Runnable, View.OnKeyL
     public int[] pointerX = new int[256];
     public int[] pointerY = new int[256];
     
-    private YabauseRunnable _Runnable = null;
-    Thread thread;
-   
-    private EGLContext mEglContext;
-    private EGLDisplay mEglDisplay;
-    private EGLSurface mEglSurface;
-    private EGLConfig mEglConfig;
-   
    
     public YabauseView(Context context, AttributeSet attrs) {
         super(context,attrs);
@@ -73,11 +63,6 @@ class YabauseView extends SurfaceView implements Callback, Runnable, View.OnKeyL
         init(translucent, depth, stencil);
     }    
           
-    public void setYabauseRunnable( YabauseRunnable runnable )
-    { 
-       _Runnable = runnable;        
-    }   
-             
     private void init(boolean translucent, int depth, int stencil) {
 
        setFocusable( true );
@@ -85,127 +70,24 @@ class YabauseView extends SurfaceView implements Callback, Runnable, View.OnKeyL
        requestFocus();
        setOnKeyListener( this );
        setOnTouchListener( this );  
-        
        getHolder().addCallback(this);
        getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
-       initGLES();
-
-    }
-    
-    private boolean initGLES(){
-
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        
-        mEglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
-        if( mEglDisplay == EGL10.EGL_NO_DISPLAY ){
-            Log.e(TAG, "Fail to get Display");
-            return false;
-        }
-            
-        int[] version = new int[2];
-        if( !egl.eglInitialize(mEglDisplay, version) ){
-            Log.e(TAG, "Fail to eglInitialize");
-            return false;
-        }
-        
-        int[] configSpec = {
-             EGL10.EGL_NONE
-         };
-            EGLConfig[] configs = new EGLConfig[1];
-        
-        int[] numConfigs = new int[1];
-        if( !egl.eglChooseConfig(mEglDisplay, configSpec, configs, 1, numConfigs) ){
-            Log.e(TAG, "Fail to Choose Config");
-            return false;
-        }
-        mEglConfig = configs[0];
-        
-        int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE };
-                
-        mEglContext = egl.eglCreateContext(mEglDisplay, mEglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
-        if( mEglContext == EGL10.EGL_NO_CONTEXT ){
-            Log.e(TAG, "Fail to Create OpenGL Context");
-            return false;
-        }
-        return true;
     }
     
     
-    private boolean createSurface(){
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        mEglSurface = egl.eglCreateWindowSurface(mEglDisplay, mEglConfig, getHolder(), null);
-        if( mEglSurface == EGL10.EGL_NO_SURFACE ){
-            return false;
-        }
-        return true;
-    }   
-    
-    private void endGLES(){
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        if( mEglSurface != null){
-            //レンダリングコンテキストとの結びつけは解除
-            egl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-            
-            egl.eglDestroySurface(mEglDisplay, mEglSurface);
-            mEglSurface = null;
-        }
-        
-        if( mEglContext != null ){
-            egl.eglDestroyContext(mEglDisplay, mEglContext);
-            mEglContext = null;
-        }
-        
-        if( mEglDisplay != null){
-            egl.eglTerminate(mEglDisplay);
-            mEglDisplay = null;
-        }
-    }   
-   
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-          
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-          
         YabauseRunnable.lockGL();
-        egl.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext);     
-        _Runnable.setUp();                
-        YabauseRunnable.initViewport(width, height); 
+        YabauseRunnable.initViewport(holder.getSurface(),width, height); 
         YabauseRunnable.unlockGL();
-        
     }
     
     @Override
-    public void run() {
-       
-       try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-
-       
-       while(thread!=null)
-       {
-         YabauseRunnable.lockGL();
-         _Runnable.run();
-         YabauseRunnable.unlockGL();
-       }
-       
-    }
- 
-    @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        if( !createSurface() ){
-             Log.e(TAG, "Fail to Creat4e Surface");
-             return ;
-        }
-        thread = new Thread(this);
-        thread.start();        
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        thread = null;
     }    
 
     // Key events

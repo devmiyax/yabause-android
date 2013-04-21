@@ -28,6 +28,8 @@ public class MainActivity extends Activity
     public FrameLayout _videoLayout = null;
 
 
+
+
     @Override
     public void onCreate( Bundle savedInstanceState )
     {
