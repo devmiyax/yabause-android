@@ -42,12 +42,12 @@ extern int GlWidth;
 static void Ygl_printShaderError( GLuint shader )
 {
   GLsizei bufSize;
-  
+
   glGetShaderiv(shader, GL_INFO_LOG_LENGTH , &bufSize);
-  
+
   if (bufSize > 1) {
     GLchar *infoLog;
-    
+
     infoLog = (GLchar *)malloc(bufSize);
     if (infoLog != NULL) {
       GLsizei length;
@@ -55,7 +55,7 @@ static void Ygl_printShaderError( GLuint shader )
       printf("Shaderlog:\n%s\n", infoLog);
       free(infoLog);
     }
-  }   
+  }
 }
 
 static GLuint _prgid[PG_MAX] ={0};
@@ -158,14 +158,14 @@ int Ygl_uniformGlowShadingHalfTrans(void * p )
       glEnableVertexAttribArray(prg->vaid);
       glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
    }
-   
+
    glUniform1i(id_sprite, 0);
    glUniform1i(id_fbo, 1);
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D,_Ygl->vdp1FrameBuff[_Ygl->drawframe]);
    glUniform1i(id_fbowidth, GlWidth);
    glUniform1i(id_fboheight, GlHeight);
-   glActiveTexture(GL_TEXTURE0); 
+   glActiveTexture(GL_TEXTURE0);
    return 0;
 }
 
@@ -226,7 +226,7 @@ int Ygl_uniformHalfTrans(void * p )
    glBindTexture(GL_TEXTURE_2D,_Ygl->vdp1FrameBuff[_Ygl->drawframe]);
    glUniform1i(id_hf_fbowidth, GlWidth);
    glUniform1i(id_hf_fboheight, GlHeight);
-   glActiveTexture(GL_TEXTURE0); 
+   glActiveTexture(GL_TEXTURE0);
    return 0;
 }
 
@@ -244,7 +244,7 @@ int Ygl_uniformStartUserClip(void * p )
 {
    YglProgram * prg;
    prg = p;
-   
+
    if( prg->ux1 != -1 )
    {
       GLint vertices[12];
@@ -256,8 +256,8 @@ int Ygl_uniformStartUserClip(void * p )
       glStencilFunc(GL_ALWAYS,0x1,0x01);
       glStencilOp(GL_REPLACE,GL_REPLACE,GL_REPLACE);
       glDisable(GL_TEXTURE_2D);
-      glColor4f(0.0f,0.0f,0.0f,1.0f);      
-      
+      glColor4f(0.0f,0.0f,0.0f,1.0f);
+
       // render
       vertices[0] = (int)((float)prg->ux1 * vdp1wratio);
       vertices[1] = (int)((float)prg->uy1 * vdp1hratio);
@@ -271,11 +271,11 @@ int Ygl_uniformStartUserClip(void * p )
       vertices[8] = (int)((float)(prg->ux2+1) * vdp1wratio);
       vertices[9] = (int)((float)(prg->uy2+1) * vdp1hratio);
       vertices[10] = (int)((float)prg->ux1 * vdp1wratio);
-      vertices[11] = (int)((float)(prg->uy2+1) * vdp1hratio);  
-      
+      vertices[11] = (int)((float)(prg->uy2+1) * vdp1hratio);
+
       glVertexPointer(2, GL_INT, 0, vertices);
       glDrawArrays(GL_TRIANGLES, 0, 6);
-      
+
       glColorMask( GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE );
       glStencilFunc(GL_ALWAYS,0,0x0);
       glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
@@ -283,7 +283,7 @@ int Ygl_uniformStartUserClip(void * p )
       glEnable(GL_TEXTURE_2D);
       glColor4f(1.0f,1.0f,1.0f,1.0f);
    }
-   
+
    glEnable(GL_STENCIL_TEST);
    glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
    if( prg->uClipMode == 0x02 )
@@ -291,11 +291,11 @@ int Ygl_uniformStartUserClip(void * p )
       glStencilFunc(GL_EQUAL,0x1,0xFF);
    }else if( prg->uClipMode == 0x03 )
    {
-      glStencilFunc(GL_EQUAL,0x0,0xFF);      
+      glStencilFunc(GL_EQUAL,0x0,0xFF);
    }else{
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
-   
+
    return 0;
 }
 
@@ -317,12 +317,12 @@ int Ygl_uniformStartVDP2Window(void * p )
 {
    YglProgram * prg;
    prg = p;
-   
+
 
    glEnable(GL_STENCIL_TEST);
    glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
-   
-  
+
+
    if( prg->bwin0 && !prg->bwin1 )
    {
       if( prg->logwin0 )
@@ -332,7 +332,7 @@ int Ygl_uniformStartVDP2Window(void * p )
          glStencilFunc(GL_NOTEQUAL,0x01,0x01);
       }
    }else if( !prg->bwin0 && prg->bwin1 ) {
-      
+
       if( prg->logwin1 )
       {
          glStencilFunc(GL_EQUAL,0x02,0x02);
@@ -344,12 +344,12 @@ int Ygl_uniformStartVDP2Window(void * p )
       if( prg->winmode == 0x0 )
       {
          glStencilFunc(GL_EQUAL,0x03,0x03);
-            
+
       // OR
       }else if( prg->winmode == 0x01 )
       {
           glStencilFunc(GL_LEQUAL,0x01,0x03);
-         
+
       }
    }
 
@@ -406,7 +406,7 @@ const GLchar Yglprg_vdp2_drawfb_f[] = \
 
 const GLchar * pYglprg_vdp2_drawfb_f[] = {Yglprg_vdp2_drawfb_f, NULL};
 
-int Ygl_uniformVDP2DrawFramebuffer( float from, float to , float * offsetcol )
+int Ygl_uniformVDP2DrawFramebuffer( void * p,float from, float to , float * offsetcol )
 {
    glUseProgram(_prgid[PG_VDP2_DRAWFRAMEBUFF]);
    glUniform1i(idvdp1FrameBuffer, 0);
@@ -415,10 +415,10 @@ int Ygl_uniformVDP2DrawFramebuffer( float from, float to , float * offsetcol )
    glUniform1f(idto,to);
    glUniform4f(idcoloroffset,offsetcol[0],offsetcol[1],offsetcol[2],offsetcol[3]);
 }
- 
+
 
 /*------------------------------------------------------------------------------------
- *  VDP2 Add Blend operaiotn 
+ *  VDP2 Add Blend operaiotn
  * ----------------------------------------------------------------------------------*/
 int Ygl_uniformAddBlend(void * p )
 {
@@ -433,7 +433,7 @@ int Ygl_cleanupAddBlend(void * p )
 }
 
 
-int YglGetProgramId( int prg ) 
+int YglGetProgramId( int prg )
 {
    return _prgid[prg];
 }
@@ -446,7 +446,7 @@ int YglInitShader( int id, const GLchar * vertex[], const GLchar * frag[] )
 
    _prgid[id] = glCreateProgram();
     if (_prgid[id] == 0 ) return -1;
-    
+
     vshader = glCreateShader(GL_VERTEX_SHADER);
     fshader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -459,17 +459,17 @@ int YglInitShader( int id, const GLchar * vertex[], const GLchar * frag[] )
        _prgid[id] = 0;
        return -1;
     }
-  
+
     glShaderSource(fshader, 1, frag, NULL);
     glCompileShader(fshader);
     glGetShaderiv(fshader, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE) {
        printf( "Compile error in fragment shader.\n");
-       Ygl_printShaderError(fshader);         
+       Ygl_printShaderError(fshader);
        _prgid[id] = 0;
        return -1;
      }
-      
+
     glAttachShader(_prgid[id], vshader);
     glAttachShader(_prgid[id], fshader);
     glLinkProgram(_prgid[id]);
@@ -487,36 +487,36 @@ int YglProgramInit()
 {
 
    GLint compiled,linked;
-   
-   // 
+
+   //
    _prgid[PG_NORMAL] = 0;
-   
-   // 
+
+   //
    if( YglInitShader( PG_VFP1_GOURAUDSAHDING, pYglprg_vdp1_gouraudshading_v, pYglprg_vdp1_gouraudshading_f ) != 0 )
       return 0;
-   
+
    _prgid[PG_VFP1_STARTUSERCLIP] = 0;
-   _prgid[PG_VFP1_ENDUSERCLIP] = 0;   
+   _prgid[PG_VFP1_ENDUSERCLIP] = 0;
    _prgid[PG_VDP2_ADDBLEND] = 0;
 
    //
    if( YglInitShader( PG_VDP2_DRAWFRAMEBUFF, pYglprg_vdp2_drawfb_v, pYglprg_vdp2_drawfb_f ) != 0 )
       return 0;
-   
+
    idvdp1FrameBuffer = glGetUniformLocation(_prgid[PG_VDP2_DRAWFRAMEBUFF], (const GLchar *)"vdp1FrameBuffer");
    idfrom = glGetUniformLocation(_prgid[PG_VDP2_DRAWFRAMEBUFF], (const GLchar *)"from");
    idto   = glGetUniformLocation(_prgid[PG_VDP2_DRAWFRAMEBUFF], (const GLchar *)"to");
    idcoloroffset = glGetUniformLocation(_prgid[PG_VDP2_DRAWFRAMEBUFF], (const GLchar *)"coloroffset");
-   
+
    //
    if( YglInitShader( PG_VFP1_HALFTRANS, pYglprg_vdp1_halftrans_v, pYglprg_vdp1_halftrans_f ) != 0 )
       return 0;
-   
+
    id_hf_sprite = glGetUniformLocation(_prgid[PG_VFP1_HALFTRANS], (const GLchar *)"sprite");
    id_hf_fbo = glGetUniformLocation(_prgid[PG_VFP1_HALFTRANS], (const GLchar *)"fbo");
    id_hf_fbowidth = glGetUniformLocation(_prgid[PG_VFP1_HALFTRANS], (const GLchar *)"fbowidth");
    id_hf_fboheight = glGetUniformLocation(_prgid[PG_VFP1_HALFTRANS], (const GLchar *)"fbohegiht");
-   
+
 
    if( YglInitShader( PG_VFP1_GOURAUDSAHDING_HALFTRANS, pYglprg_vdp1_gouraudshading_hf_v, pYglprg_vdp1_gouraudshading_hf_f ) != 0 )
       return 0;
@@ -525,7 +525,7 @@ int YglProgramInit()
    id_fbo = glGetUniformLocation(_prgid[PG_VFP1_GOURAUDSAHDING_HALFTRANS], (const GLchar *)"fbo");
    id_fbowidth = glGetUniformLocation(_prgid[PG_VFP1_GOURAUDSAHDING_HALFTRANS], (const GLchar *)"fbowidth");
    id_fboheight = glGetUniformLocation(_prgid[PG_VFP1_GOURAUDSAHDING_HALFTRANS], (const GLchar *)"fbohegiht");
-  
+
    return 0;
 }
 
@@ -544,7 +544,7 @@ int YglProgramChange( YglLevel * level, int prgid )
       memset(tmp,0,sizeof(YglProgram)*level->prgcount);
       memcpy(tmp,level->prg,sizeof(YglProgram)*(level->prgcount-1));
       level->prg = tmp;
-      
+
       level->prg[level->prgcurrent].currentQuad = 0;
       level->prg[level->prgcurrent].maxQuad = 12 * 64;
       if ((level->prg[level->prgcurrent].quads = (int *) malloc(level->prg[level->prgcurrent].maxQuad * sizeof(int))) == NULL)
@@ -559,7 +559,7 @@ int YglProgramChange( YglLevel * level, int prgid )
 
    level->prg[level->prgcurrent].prgid=prgid;
    level->prg[level->prgcurrent].prg=_prgid[prgid];
-   
+
    if( prgid == PG_VFP1_GOURAUDSAHDING )
    {
       GLuint id;
@@ -569,7 +569,7 @@ int YglProgramChange( YglLevel * level, int prgid )
       glUniform1i(id, 0);
       level->prg[level->prgcurrent].vaid = 0;
       level->prg[level->prgcurrent].vaid = glGetAttribLocation(_prgid[PG_VFP1_GOURAUDSAHDING],(const GLchar *)"grcolor");
-   }  
+   }
    else if( prgid == PG_VFP1_STARTUSERCLIP )
    {
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformStartUserClip;
@@ -586,16 +586,16 @@ int YglProgramChange( YglLevel * level, int prgid )
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformHalfTrans;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupHalfTrans;
 
-      
-   }   
+
+   }
    else if( prgid == PG_VFP1_GOURAUDSAHDING_HALFTRANS )
    {
       GLuint id;
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformGlowShadingHalfTrans;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupGlowShadingHalfTrans;
       level->prg[level->prgcurrent].vaid = glGetAttribLocation(_prgid[PG_VFP1_GOURAUDSAHDING],(const GLchar *)"grcolor");
-      
-      
+
+
    }else if( prgid == PG_VDP2_ADDBLEND )
    {
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformAddBlend;
@@ -607,14 +607,13 @@ int YglProgramChange( YglLevel * level, int prgid )
    }else if( prgid == PG_VDP2_ENDWINDOW )
    {
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformEndVDP2Window;
-      level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupEndVDP2Window;   
+      level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupEndVDP2Window;
    }else{
       level->prg[level->prgcurrent].setupUniform = NULL;
       level->prg[level->prgcurrent].cleanupUniform = NULL;
    }
    return 0;
-   
+
 }
 
 #endif
-

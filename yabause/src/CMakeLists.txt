@@ -14,8 +14,19 @@ set(yabause_SOURCES
 	peripheral.c profile.c
 	scu.c sh2core.c sh2d.c sh2idle.c sh2int.c sh2trace.c smpc.c snddummy.c
 	titan/titan.c
-	vdp1.c vdp2.c vdp2debug.c vidogl.c vidshared.c vidsoft.c ygles2.c 
-	yabause.c yglshaderes2.c)
+	vdp1.c vdp2.c vdp2debug.c vidogl.c vidshared.c vidsoft.c
+	yabause.c )
+if (ANDROID)
+set(yabause_SOURCES
+	${yabause_SOURCES}
+	ygles2.c
+	yglshaderes2.c )
+else()
+set(yabause_SOURCES
+        ${yabause_SOURCES}
+        ygl.c
+        yglshader.c )
+endif()
 
 # new SCSP
 option(YAB_USE_SCSP2 "Use the new SCSP implementation.")
@@ -158,7 +169,7 @@ if (MSVC)
 		set(DDK_DIR "$ENV{SYSTEMDRIVE}/WINDDK/7600.16385.0/")
         endif (EXISTS "$ENV{SYSTEMDRIVE}/WINDDK/3790.1830/")
 
-	add_definitions(-DHAVE_C99_VARIADIC_MACROS -D_CRT_SECURE_NO_WARNINGS -DC68K_NO_JUMP_TABLE 
+	add_definitions(-DHAVE_C99_VARIADIC_MACROS -D_CRT_SECURE_NO_WARNINGS -DC68K_NO_JUMP_TABLE
 			-D_UNICODE -DUNICODE)
 endif (MSVC)
 
@@ -267,7 +278,7 @@ if (YAB_WANT_Q68)
 endif()
 
 # *DEBUG
-set(YAB_DEBUG "" CACHE STRING "List of enabled debug information") 
+set(YAB_DEBUG "" CACHE STRING "List of enabled debug information")
 foreach(DEBUG IN LISTS YAB_DEBUG)
 	if (${DEBUG} STREQUAL "main")
 		add_definitions(-DDEBUG=1)
@@ -342,18 +353,18 @@ else ()
 	set(yabause_SOURCES ${yabause_SOURCES} thr-dummy.c)
 endif ()
 
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=i686 -msse")
-endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -mcpu=cortex-a8 -mfpu=vfp -mfloat-abi=softfp")
-endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
+#if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
+#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=i686 -msse")
+#endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
+#if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+#endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+#if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
+#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+#endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
+#if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
+#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -mcpu=cortex-a8 -mfpu=vfp -mfloat-abi=softfp")
+#endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
 if(ANDROID)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif()

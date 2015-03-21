@@ -67,8 +67,8 @@ static char mpegpath[256] = "\0";
 static char cartpath[256] = "\0";
 
 EGLDisplay g_Display = EGL_NO_DISPLAY;
-EGLSurface g_Surface = EGL_NO_SURFACE; 
-EGLContext g_Context = EGL_NO_CONTEXT; 
+EGLSurface g_Surface = EGL_NO_SURFACE;
+EGLContext g_Context = EGL_NO_CONTEXT;
 ANativeWindow *g_window = 0;
 GLuint g_FrameBuffer  = 0;
 GLuint g_VertexBuffer = 0;
@@ -80,10 +80,10 @@ GLuint samplerLoc     = 0;
 int g_buf_width = -1;
 int g_buf_height = -1;
 pthread_mutex_t g_mtxGlLock = PTHREAD_MUTEX_INITIALIZER;
-float vertices [] = { 
+float vertices [] = {
    -1.0f, 1.0f, 0, 0,
-   1.0f, 1.0f, 0, 0, 
-   1.0f, -1.0f, 0, 0, 
+   1.0f, 1.0f, 0, 0,
+   1.0f, -1.0f, 0, 0,
    -1.0f,-1.0f, 0, 0
 };
 
@@ -92,7 +92,7 @@ enum RenderThreadMessage {
         MSG_WINDOW_SET,
         MSG_RENDER_LOOP_EXIT
 };
-    
+
 int g_msg = MSG_NONE;
 pthread_t _threadId;
 
@@ -150,7 +150,7 @@ int printf( const char * fmt, ... )
    va_start(ap, fmt);
    int result = __android_log_vprint(ANDROID_LOG_INFO, LOG_TAG, fmt, ap);
    va_end(ap);
-   return result;   
+   return result;
 }
 
 /* Override printf for debug*/
@@ -160,7 +160,7 @@ int xprintf( const char * fmt, ... )
    va_start(ap, fmt);
    int result = __android_log_vprint(ANDROID_LOG_INFO, LOG_TAG, fmt, ap);
    va_end(ap);
-   return result;   
+   return result;
 }
 
 void YuiErrorMsg(const char *string)
@@ -182,7 +182,7 @@ void* threadStartCallback(void *myself);
 
 void YuiSwapBuffers(void)
 {
-   if( g_Display == EGL_NO_DISPLAY ) 
+   if( g_Display == EGL_NO_DISPLAY )
    {
       return;
    }
@@ -202,28 +202,28 @@ JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_initViewport( JNI
    int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
    int config_attr_list[] = {EGL_CONFIG_ID,0,EGL_NONE} ;
    EGLint num_config;
-   
+
     if (surface != 0) {
         g_window = ANativeWindow_fromSurface(jenv, surface);
         printf("Got window %p", g_window);
     } else {
         printf("Releasing window");
         ANativeWindow_release(g_window);
-    }   
-    
+    }
+
     g_msg = MSG_WINDOW_SET;
-   
+
    return 0;
 }
 
 int Java_org_yabause_android_YabauseRunnable_lockGL()
 {
-   pthread_mutex_lock(&g_mtxGlLock);  
+   pthread_mutex_lock(&g_mtxGlLock);
 }
 
 int Java_org_yabause_android_YabauseRunnable_unlockGL()
 {
-   pthread_mutex_unlock(&g_mtxGlLock);  
+   pthread_mutex_unlock(&g_mtxGlLock);
 }
 
 
@@ -245,15 +245,15 @@ Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject
     filename = (jstring) (*env)->CallStaticObjectMethod( env, yclass, getCDImage );
     const char *nativeS = (*env)->GetStringUTFChars( env, filename, 0 );
     strcpy( cdpath, nativeS );
-    
+
     (*env)->ReleaseStringUTFChars( env, filename, nativeS );
 
     filename = (jstring) (*env)->CallStaticObjectMethod( env, yclass, getBios );
     nativeS = (*env)->GetStringUTFChars( env, filename, 0 );
     strcpy( biospath, nativeS );
     (*env)->ReleaseStringUTFChars( env, filename, nativeS);
-    
-    
+
+
     pthread_create(&_threadId, 0, threadStartCallback, NULL );
 
     return res;
@@ -261,10 +261,10 @@ Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject
 
 int initEgl( ANativeWindow* window )
 {
-    int res;   
+    int res;
     yabauseinit_struct yinit;
-    void * padbits;    
-    
+    void * padbits;
+
      const EGLint attribs[] = {
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
         EGL_BLUE_SIZE, 8,
@@ -273,7 +273,7 @@ int initEgl( ANativeWindow* window )
         EGL_NONE
     };
     EGLDisplay display;
-    EGLConfig config;    
+    EGLConfig config;
     EGLint numConfigs;
     EGLint format;
     EGLSurface surface;
@@ -281,11 +281,11 @@ int initEgl( ANativeWindow* window )
     EGLint width;
     EGLint height;
     GLfloat ratio;
-    int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+    int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
 
-    
+
     printf("Initializing context");
-    
+
     if ((display = eglGetDisplay(EGL_DEFAULT_DISPLAY)) == EGL_NO_DISPLAY) {
         printf("eglGetDisplay() returned error %d", eglGetError());
         return -1;
@@ -316,21 +316,21 @@ int initEgl( ANativeWindow* window )
         destroy();
         return -1;
     }
-    
+
     printf("eglCreateContext");
     if (!(context = eglCreateContext(display, config, 0, attrib_list))) {
         printf("eglCreateContext() returned error %d", eglGetError());
         destroy();
         return -1;
     }
-    
+
     printf("eglMakeCurrent");
     if (!eglMakeCurrent(display, surface, surface, context)) {
         printf("eglMakeCurrent() returned error %d", eglGetError());
         destroy();
         return -1;
     }
-
+   glClearColor( 0.0f, 0.0f,0.0f,1.0f);
     if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
         !eglQuerySurface(display, surface, EGL_HEIGHT, &height)) {
         printf("eglQuerySurface() returned error %d", eglGetError());
@@ -338,22 +338,22 @@ int initEgl( ANativeWindow* window )
         return -1;
     }
 
-   
+
     g_Display = display;
-    g_Surface = surface; 
-    g_Context = context; 
+    g_Surface = surface;
+    g_Context = context;
 
 //    g_width = width;
 //    g_height = height;
-   
-    
+
+
    printf(glGetString(GL_VENDOR));
    printf(glGetString(GL_RENDERER));
    printf(glGetString(GL_VERSION));
    printf(glGetString(GL_EXTENSIONS));
    printf(eglQueryString(g_Display,EGL_EXTENSIONS));
-   
-   
+
+
     yinit.m68kcoretype = M68KCORE_C68K;
     yinit.percoretype = PERCORE_DUMMY;
 #ifdef SH2_DYNAREC
@@ -362,7 +362,7 @@ int initEgl( ANativeWindow* window )
     yinit.sh2coretype = SH2CORE_DEFAULT;
 #endif
     //yinit.vidcoretype = VIDCORE_SOFT;
-    yinit.vidcoretype = 2;    
+    yinit.vidcoretype = 1;
     yinit.sndcoretype = SNDCORE_OPENSL;
     //yinit.sndcoretype = SNDCORE_DUMMY;
     //yinit.cdcoretype = CDCORE_DEFAULT;
@@ -396,10 +396,12 @@ int initEgl( ANativeWindow* window )
     PerSetKey(12, PERPAD_Z, padbits);
 
     ScspSetFrameAccurate(1);
-    
+
    VIDCore->Resize(width,height,0);
-   glViewport(0,0,width,height);    
-   
+   glViewport(0,0,width,height);
+
+   glClearColor( 0.0f, 0.0f,0.0f,1.0f);
+   glClear( GL_COLOR_BUFFER_BIT );
    return 1;
 }
 
@@ -410,7 +412,7 @@ destroy() {
     eglDestroyContext(g_Display, g_Context);
     eglDestroySurface(g_Display, g_Surface);
     eglTerminate(g_Display);
-    
+
     g_Display = EGL_NO_DISPLAY;
     g_Surface = EGL_NO_SURFACE;
     g_Context = EGL_NO_CONTEXT;
@@ -463,7 +465,7 @@ jint JNI_OnLoad(JavaVM * vm, void * reserved)
 void renderLoop()
 {
     int renderingEnabled = 1;
-    
+
     printf("enter render loop!");
 
     while (renderingEnabled != 0) {
@@ -486,9 +488,9 @@ void renderLoop()
                 break;
         }
         g_msg = MSG_NONE;
-        
+
         if (g_Display) {
-           YabauseExec();   
+           YabauseExec();
         }
         pthread_mutex_unlock(&g_mtxGlLock);
     }
