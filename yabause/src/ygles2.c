@@ -556,8 +556,13 @@ int YglGLInit(int width, int height) {
    if( _Ygl->texture == 0 )
       glGenTextures(1, &_Ygl->texture);
 
+  glGenBuffers(1, &_Ygl->pixelBufferID);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->pixelBufferID);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height * 4, NULL, GL_STREAM_DRAW);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
    glBindTexture(GL_TEXTURE_2D, _Ygl->texture);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, YglTM->texture);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
    if( (error = glGetError()) != GL_NO_ERROR )
    {
       printf("Fail to init YglTM->texture %04X", error);
@@ -568,9 +573,10 @@ int YglGLInit(int width, int height) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-
-
-   if( glGenRenderbuffers == NULL ) return 0;
+   glBindTexture(GL_TEXTURE_2D, _Ygl->texture);
+   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->pixelBufferID);
+   YglTM->texture = (int*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, width * height * 4, GL_MAP_WRITE_BIT);
+   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    if( _Ygl->vdp1FrameBuff != 0 ) glDeleteTextures(2,_Ygl->vdp1FrameBuff);
    glGenTextures(2,_Ygl->vdp1FrameBuff);
@@ -593,7 +599,7 @@ int YglGLInit(int width, int height) {
       if( _Ygl->rboid_depth != 0 ) glDeleteRenderbuffers(1,&_Ygl->rboid_depth);
       glGenRenderbuffers(1, &_Ygl->rboid_depth);
       glBindRenderbuffer(GL_RENDERBUFFER,_Ygl->rboid_depth);
-      glRenderbufferStorage(GL_RENDERBUFFER,  GL_DEPTH24_STENCIL8_OES, GlWidth, GlHeight);
+      glRenderbufferStorage(GL_RENDERBUFFER,  GL_DEPTH24_STENCIL8, GlWidth, GlHeight);
       _Ygl->rboid_stencil = _Ygl->rboid_depth;
 
    }else{
@@ -609,7 +615,6 @@ int YglGLInit(int width, int height) {
    }
 
 
-
    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[0], 0);
    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
@@ -622,6 +627,8 @@ int YglGLInit(int width, int height) {
 
    glBindFramebuffer(GL_FRAMEBUFFER, 0 );
    glBindTexture(GL_TEXTURE_2D,_Ygl->texture);
+
+
 
    return 0;
 }
@@ -721,7 +728,7 @@ int YglInit(int width, int height, unsigned int depth) {
       if( _Ygl->rboid_depth != 0 ) glDeleteRenderbuffers(1,&_Ygl->rboid_depth);
       glGenRenderbuffers(1, &_Ygl->rboid_depth);
       glBindRenderbuffer(GL_RENDERBUFFER,_Ygl->rboid_depth);
-      glRenderbufferStorage(GL_RENDERBUFFER,  GL_DEPTH24_STENCIL8_OES, GlWidth, GlHeight);
+      glRenderbufferStorage(GL_RENDERBUFFER,  GL_DEPTH24_STENCIL8, GlWidth, GlHeight);
       _Ygl->rboid_stencil = _Ygl->rboid_depth;
 
    }else{
@@ -1657,8 +1664,10 @@ void YglRender(void) {
    //glEnable(GL_TEXTURE_2D);
 
    glActiveTexture(GL_TEXTURE0);
+   glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
    glBindTexture(GL_TEXTURE_2D, _Ygl->texture);
-   glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, YglTM->width, YglTM->yMax, GL_RGBA, GL_UNSIGNED_BYTE, YglTM->texture);
+   glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, YglTM->width, YglTM->yMax, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
 #if 0 // Test
    ShaderDrawTest();
@@ -1738,7 +1747,8 @@ void YglRender(void) {
    glDisable(GL_TEXTURE_2D);
    glUseProgram(0);
    YuiSwapBuffers();
-
+   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->pixelBufferID);
+   YglTM->texture = (int*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, 2048 * 1024 * 4, GL_MAP_WRITE_BIT);
 }
 
 //////////////////////////////////////////////////////////////////////////////

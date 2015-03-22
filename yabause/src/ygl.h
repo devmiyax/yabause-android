@@ -18,12 +18,12 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#if defined(HAVE_LIBGL) || defined(__ANDROID__) 
+#if defined(HAVE_LIBGL) || defined(__ANDROID__)
 
 #ifdef __ANDROID__
 
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <GLES3/gl31.h>
+//#include <GLES3/gl3ext.h>
 #include <EGL/egl.h>
 
 #else // __ANDROID__
@@ -106,12 +106,12 @@ enum
    PG_VFP1_GOURAUDSAHDING,
    PG_VFP1_STARTUSERCLIP,
    PG_VFP1_ENDUSERCLIP,
-   PG_VFP1_HALFTRANS,    
-   PG_VFP1_GOURAUDSAHDING_HALFTRANS, 
+   PG_VFP1_HALFTRANS,
+   PG_VFP1_GOURAUDSAHDING_HALFTRANS,
    PG_VDP2_ADDBLEND,
-   PG_VDP2_DRAWFRAMEBUFF,    
+   PG_VDP2_DRAWFRAMEBUFF,
    PG_VDP2_STARTWINDOW,
-   PG_VDP2_ENDWINDOW,    
+   PG_VDP2_ENDWINDOW,
    PG_WINDOW,
    PG_MAX,
 };
@@ -153,17 +153,18 @@ typedef struct
 
 typedef struct {
    GLuint texture;
+   GLuint pixelBufferID;
    int st;
    char message[512];
    int msglength;
    unsigned int width;
    unsigned int height;
    unsigned int depth;
-   
+
    // VDP1 Info
    int vdp1_maxpri;
    int vdp1_minpri;
-   
+
    // VDP1 Framebuffer
    int rwidth;
    int rheight;
@@ -171,17 +172,17 @@ typedef struct {
    GLuint rboid_depth;
    GLuint rboid_stencil;
    GLuint vdp1fbo;
-   GLuint vdp1FrameBuff[2];  
-   
+   GLuint vdp1FrameBuff[2];
+
    int bUpdateWindow;
    int win0v[512*4];
    int win0_vertexcnt;
    int win1v[512*4];
    int win1_vertexcnt;
-   
+
    YglMatrix mtxModelView;
    YglMatrix mtxTexture;
-   
+
    YglProgram windowpg;
    YglProgram renderfb;
 
@@ -212,7 +213,7 @@ int YglIsCached(u32,YglCache *);
 void YglCacheAdd(u32,YglCache *);
 void YglCacheReset(void);
 
-// 0.. no belnd, 1.. Alpha, 2.. Add 
+// 0.. no belnd, 1.. Alpha, 2.. Add
 int YglSetLevelBlendmode( int pri, int mode );
 
 int Ygl_uniformVDP2DrawFramebuffer( void * p,float from, float to , float * offsetcol );

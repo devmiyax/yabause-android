@@ -604,10 +604,11 @@ static int idto;
 static int idcoloroffset;
 
 const GLchar Yglprg_vdp1_drawfb_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;                \n"
-      "attribute vec4 a_position;               \n"
-      "attribute vec2 a_texcoord;               \n"
-      "varying vec2 v_texcoord;                 \n"
+      "layout (location = 0) in vec4 a_position;               \n"
+      "layout (location = 1) in vec2 a_texcoord;               \n"
+      "out vec2 v_texcoord;                 \n"
       "void main() {                            \n"
       "   v_texcoord  = a_texcoord;             \n"
       "   gl_Position = a_position*u_mvpMatrix; \n"
@@ -615,24 +616,29 @@ const GLchar Yglprg_vdp1_drawfb_v[] =
 const GLchar * pYglprg_vdp2_drawfb_v[] = {Yglprg_vdp1_drawfb_v, NULL};
 
 const GLchar Yglprg_vdp2_drawfb_f[] =
+      "#version 300 es \n"
       "precision highp float;                             \n"
-      "varying vec2 v_texcoord;                             \n"
+      "in vec2 v_texcoord;                             \n"
       "uniform sampler2D s_vdp1FrameBuffer;                 \n"
       "uniform float u_from;                                  \n"
       "uniform float u_to;                                    \n"
       "uniform vec4 u_coloroffset;                            \n"
+      "out vec4 fragColor;            \n"
       "void main()                                          \n"
       "{                                                    \n"
       "  vec2 addr = v_texcoord;                         \n"
-      "  vec4 fbColor = texture2D(s_vdp1FrameBuffer,addr);  \n"
+      "  vec4 fbColor = texture(s_vdp1FrameBuffer,addr);  \n"
       "  int additional = int(fbColor.a * 255.0);           \n"
-      "  int talpha = int(additional/8);           \n"
-      "  float alpha = (float(talpha)*8.0)/255.0;    \n"
-      "  //float depth = (fbColor.a-alpha)*255.0/10.0 + 0.05; \n"
-      "  //if( depth < u_from || depth > u_to ){ discard;return;} \n"
-      "  gl_FragColor = fbColor;                            \n"
-      "  gl_FragColor += vec4(u_coloroffset.r,u_coloroffset.g,u_coloroffset.b,0.0);\n"
-      "  gl_FragColor.a = alpha;                            \n"
+      "  int talpha = additional/8;           \n"
+      "  float alpha = float(talpha*8)/255.0;  \n"
+      "  float depth = ((fbColor.a-alpha)*255.0)/10.0; \n"
+      "  if( depth < u_from || depth > u_to ){ discard;return;} \n"
+      "  fragColor = fbColor;                            \n"
+      "  fragColor.r += u_coloroffset.a;\n"
+      "  fragColor.g += u_coloroffset.r;\n"
+      "  fragColor.b += u_coloroffset.g;\n"
+      "  fragColor.a = alpha;                            \n"
+      "  //gl_FragDepth = depth;\n" \
       "}                                                    \n";
 
 

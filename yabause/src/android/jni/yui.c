@@ -199,7 +199,7 @@ JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_initViewport( JNI
    EGLContext Context;
    EGLConfig cfg;
    int configid;
-   int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+   int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
    int config_attr_list[] = {EGL_CONFIG_ID,0,EGL_NONE} ;
    EGLint num_config;
 
@@ -270,6 +270,9 @@ int initEgl( ANativeWindow* window )
         EGL_BLUE_SIZE, 8,
         EGL_GREEN_SIZE, 8,
         EGL_RED_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
+        EGL_DEPTH_SIZE,24,
+        EGL_STENCIL_SIZE,8,
         EGL_NONE
     };
     EGLDisplay display;
@@ -347,11 +350,11 @@ int initEgl( ANativeWindow* window )
 //    g_height = height;
 
 
-   printf(glGetString(GL_VENDOR));
-   printf(glGetString(GL_RENDERER));
-   printf(glGetString(GL_VERSION));
-   printf(glGetString(GL_EXTENSIONS));
-   printf(eglQueryString(g_Display,EGL_EXTENSIONS));
+   printf("%s",glGetString(GL_VENDOR));
+   printf("%s",glGetString(GL_RENDERER));
+   printf("%s",glGetString(GL_VERSION));
+   printf("%s",glGetString(GL_EXTENSIONS));
+   printf("%s",eglQueryString(g_Display,EGL_EXTENSIONS));
 
 
     yinit.m68kcoretype = M68KCORE_C68K;
@@ -375,6 +378,7 @@ int initEgl( ANativeWindow* window )
     yinit.mpegpath = mpegpath;
     yinit.cartpath = cartpath;
     yinit.videoformattype = VIDEOFORMATTYPE_NTSC;
+    yinit.frameskip = 1;
 
     res = YabauseInit(&yinit);
 
