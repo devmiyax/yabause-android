@@ -629,16 +629,15 @@ const GLchar Yglprg_vdp2_drawfb_f[] =
       "  vec2 addr = v_texcoord;                         \n"
       "  vec4 fbColor = texture(s_vdp1FrameBuffer,addr);  \n"
       "  int additional = int(fbColor.a * 255.0);           \n"
-      "  int talpha = additional/8;           \n"
-      "  float alpha = float(talpha*8)/255.0;  \n"
-      "  float depth = ((fbColor.a-alpha)*255.0)/10.0; \n"
+      "  float alpha = float((additional/8)*8)/255.0;  \n"
+      "  float depth = float(additional&0x07)/10.0 + 0.5; \n"
       "  if( depth < u_from || depth > u_to ){ discard;return;} \n"
       "  fragColor = fbColor;                            \n"
       "  fragColor.r += u_coloroffset.a;\n"
       "  fragColor.g += u_coloroffset.r;\n"
       "  fragColor.b += u_coloroffset.g;\n"
-      "  fragColor.a = alpha;                            \n"
-      "  //gl_FragDepth = depth;\n" \
+      "  fragColor.a = alpha;\n"
+      "  gl_FragDepth = depth; //depth;\n" \
       "}                                                    \n";
 
 
