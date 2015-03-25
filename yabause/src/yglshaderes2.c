@@ -79,7 +79,11 @@ const GLchar Yglprg_normal_f[] =
       "void main()                                         \n"
       "{                                                   \n"
       "  vec2 addr = v_texcoord.st;                        \n"
-      "  gl_FragColor = texture2D( s_texture, addr );      \n"
+      "  vec4 txcol = texture2D( s_texture, addr );         \n"
+      "  if(txcol.a > 0.0)\n                                 "
+      "     gl_FragColor = txcol;\n                         "
+      "  else \n                                            "
+      "     discard;\n                                      "
       "}                                                   \n";
 const GLchar * pYglprg_normal_f[] = {Yglprg_normal_f, NULL};
 
@@ -630,14 +634,18 @@ const GLchar Yglprg_vdp2_drawfb_f[] =
       "  vec4 fbColor = texture(s_vdp1FrameBuffer,addr);  \n"
       "  int additional = int(fbColor.a * 255.0);           \n"
       "  float alpha = float((additional/8)*8)/255.0;  \n"
-      "  float depth = float(additional&0x07)/10.0 + 0.5; \n"
+      "  float depth = clamp( float(additional&0x07)/10.0, 0.0, 1.0); \n"
       "  if( depth < u_from || depth > u_to ){ discard;return;} \n"
-      "  fragColor = fbColor;                            \n"
-      "  fragColor.r += u_coloroffset.a;\n"
-      "  fragColor.g += u_coloroffset.r;\n"
-      "  fragColor.b += u_coloroffset.g;\n"
-      "  fragColor.a = alpha;\n"
-      "  gl_FragDepth = depth; //depth;\n" \
+      "  if( alpha > 0.0){ \n"
+      "     fragColor = fbColor;                            \n"
+      "     fragColor.r = clamp( fragColor.r+u_coloroffset.r, 0.0, 1.0);\n"
+      "     fragColor.g = clamp( fragColor.g+u_coloroffset.r, 0.0, 1.0);\n"
+      "     fragColor.b = clamp( fragColor.b+u_coloroffset.r, 0.0, 1.0);\n"
+      "     fragColor.a = alpha;\n"
+      "     gl_FragDepth = depth;\n"
+      "  } else { \n"
+      "     discard;\n"
+      "  }\n"
       "}                                                    \n";
 
 

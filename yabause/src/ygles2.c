@@ -1551,6 +1551,7 @@ void YglRenderFrameBuffer( int from , int to ) {
 
    glEnable(GL_TEXTURE_2D);
 
+   //printf("YglRenderFrameBuffer: %d to %d\n", from , to );
 
    offsetcol[0] = vdp1cor / 255.0f;
    offsetcol[1] = vdp1cog / 255.0f;
@@ -1741,8 +1742,18 @@ void YglRender(void) {
          YglTranslatef(&mtx,0.0f,0.0f,0.1f);
 
    }
-      YglRenderFrameBuffer(from,8);
-
+  YglRenderFrameBuffer(from,8);
+#if 0
+  {
+    FILE * pfDepth;
+    float *depth_buf = (float*)malloc(sizeof(float)*GlWidth*GlHeight);
+    glReadPixels( 0, 0, GlWidth, GlHeight, GL_DEPTH_COMPONENT, GL_FLOAT, depth_buf );
+    pfDepth = fopen("/mnt/sdcard/depth.bin","wb");
+    fwrite(depth_buf,sizeof(float),GlWidth*GlHeight,pfDepth);
+    fclose(pfDepth);
+    free(depth_buf);
+  }
+#endif
 #endif
    glDisable(GL_TEXTURE_2D);
    glUseProgram(0);
