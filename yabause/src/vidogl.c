@@ -3078,7 +3078,7 @@ static void Vdp2DrawBackScreen(void)
    static unsigned char lineColors[512 * 3];
    static int line[512*4];
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(_OGLES3_)
 
 #else
    if (Vdp2Regs->VRSIZE & 0x8000)
@@ -3963,6 +3963,7 @@ void VIDOGLVdp2DrawScreens(void)
    Vdp2DrawNBG1();
    Vdp2DrawNBG0();
    Vdp2DrawRBG0();
+
 }
 
 //////////////////////////////////////////////////////////////////////////////

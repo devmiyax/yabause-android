@@ -19,14 +19,14 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
 #include <stdlib.h>
 #include <math.h>
 #include "ygl.h"
 #include "yui.h"
 #include "vidshared.h"
 
-#define printf xprintf
+///#define printf xprintf
 
 #define PI 3.1415926535897932384626433832795f
 
@@ -169,6 +169,12 @@ void YglOrtho(YglMatrix *result, float left, float right, float bottom, float to
     YglMatrixMultiply(result, &ortho, result);
 }
 
+void YglTransform(YglMatrix *mtx, float * inXyz, float * outXyz )
+{
+    outXyz[0] = inXyz[0] * mtx->m[0][0] + inXyz[0] * mtx->m[0][1]  + inXyz[0] * mtx->m[0][2] + mtx->m[0][3];
+    outXyz[1] = inXyz[0] * mtx->m[1][0] + inXyz[0] * mtx->m[1][1]  + inXyz[0] * mtx->m[1][2] + mtx->m[1][3];
+    outXyz[2] = inXyz[0] * mtx->m[2][0] + inXyz[0] * mtx->m[2][1]  + inXyz[0] * mtx->m[2][2] + mtx->m[2][3];
+}
 
 void YglMatrixMultiply(YglMatrix *result, YglMatrix *srcA, YglMatrix *srcB)
 {
@@ -474,7 +480,12 @@ void YglTMInit(unsigned int w, unsigned int h) {
 //////////////////////////////////////////////////////////////////////////////
 
 void YglTMDeInit(void) {
-   free(YglTM->texture);
+   //free(YglTM->texture);
+    if( YglTM->texture != NULL ) {
+        glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
+        YglTM->texture = NULL;
+    }
+
    free(YglTM);
 }
 
@@ -575,7 +586,13 @@ int YglGLInit(int width, int height) {
 
    glBindTexture(GL_TEXTURE_2D, _Ygl->texture);
    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->pixelBufferID);
-   YglTM->texture = (int*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, width * height * 4, GL_MAP_WRITE_BIT);
+
+   YglTM->texture = (unsigned int *)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, width * height * 4, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
+   if( (error = glGetError()) != GL_NO_ERROR )
+   {
+      printf("Fail to init YglTM->texture %04X", error);
+      return -1;
+   }
    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    if( _Ygl->vdp1FrameBuff != 0 ) glDeleteTextures(2,_Ygl->vdp1FrameBuff);
@@ -1412,7 +1429,6 @@ void YglRenderVDP1(void) {
    int j;
    int status;
 
-
    level = &(_Ygl->levels[_Ygl->depth]);
    glDisable(GL_STENCIL_TEST);
    glActiveTexture(GL_TEXTURE0);
@@ -1434,7 +1450,7 @@ void YglRenderVDP1(void) {
    }
 
    glClearColor(0.0f,0.0f,0.0f,0.0f);
-   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
    glDisable(GL_DEPTH_TEST);
    glDisable(GL_BLEND);
@@ -1568,7 +1584,7 @@ void YglRenderFrameBuffer( int from , int to ) {
    logwin1 = (Vdp2Regs->WCTLC >> 10) & 0x01;
    winmode    = (Vdp2Regs->WCTLC >> 15 ) & 0x01;
 
-
+#if 0 // TODO
    if( bwin0 || bwin1 )
    {
       glEnable(GL_STENCIL_TEST);
@@ -1604,7 +1620,7 @@ void YglRenderFrameBuffer( int from , int to ) {
          }
       }
    }
-
+#endif
 
    // render
    vertices[0] = 0;
@@ -1640,11 +1656,14 @@ void YglRenderFrameBuffer( int from , int to ) {
    glVertexAttribPointer(_Ygl->renderfb.vertexp,2,GL_INT, GL_FALSE,0,(GLvoid *)vertices );
    glVertexAttribPointer(_Ygl->renderfb.texcoordp,2,GL_FLOAT,GL_FALSE,0,(GLvoid *)texcord );
    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+#if 0 // TODO
    if( bwin0 || bwin1 )
    {
       glDisable(GL_STENCIL_TEST);
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
+#endif
 }
 
 
@@ -1658,9 +1677,11 @@ void YglRender(void) {
    unsigned int i,j;
 
    glBindFramebuffer(GL_FRAMEBUFFER,0);
-   glClearColor( 0.0f,0.0f,0.0f,1.0f);
-   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
+   glClearColor( 0.0f,0.0f,0.0f,1.0f);
+   glClearDepthf(0.0f);
+   glDepthMask(GL_TRUE);
+   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
    //glEnable(GL_TEXTURE_2D);
 
@@ -1716,17 +1737,12 @@ void YglRender(void) {
             {
                level->prg[j].setupUniform((void*)&level->prg[j]);
             }
-#if 1
             YglMatrixMultiply(&dmtx, &mtx, &_Ygl->mtxModelView);
             glUniformMatrix4fv( level->prg[j].mtxModelView, 1, GL_FALSE, (GLfloat*) &dmtx.m[0][0] );
             glUniformMatrix4fv( level->prg[j].mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
 
             glVertexAttribPointer(level->prg[j].vertexp,2, GL_INT,GL_FALSE, 0, (GLvoid*)level->prg[j].quads );
             glVertexAttribPointer(level->prg[j].texcoordp,4, GL_FLOAT,GL_FALSE, 0, (GLvoid*)level->prg[j].textcoords );
-#else
-//            glVertexPointer(2, GL_INT, 0, level->prg[j].quads);
-//            glTexCoordPointer(4, GL_FLOAT, 0, level->prg[j].textcoords);
-#endif
 
             if( level->prg[j].currentQuad != 0 )
             {
@@ -1742,18 +1758,8 @@ void YglRender(void) {
          YglTranslatef(&mtx,0.0f,0.0f,0.1f);
 
    }
-  YglRenderFrameBuffer(from,8);
-#if 0
-  {
-    FILE * pfDepth;
-    float *depth_buf = (float*)malloc(sizeof(float)*GlWidth*GlHeight);
-    glReadPixels( 0, 0, GlWidth, GlHeight, GL_DEPTH_COMPONENT, GL_FLOAT, depth_buf );
-    pfDepth = fopen("/mnt/sdcard/depth.bin","wb");
-    fwrite(depth_buf,sizeof(float),GlWidth*GlHeight,pfDepth);
-    fclose(pfDepth);
-    free(depth_buf);
-  }
-#endif
+   YglRenderFrameBuffer(from,8);
+
 #endif
    glDisable(GL_TEXTURE_2D);
    glUseProgram(0);
@@ -1852,4 +1858,4 @@ void YglCacheReset(void) {
 
 
 
-#endif
+//#endif

@@ -19,14 +19,14 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
 #include <stdlib.h>
 #include <math.h>
 #include "ygl.h"
 #include "yui.h"
 #include "vidshared.h"
 
-#define printf xprintf
+//#define printf xprintf
 
 extern float vdp1wratio;
 extern float vdp1hratio;
@@ -220,8 +220,9 @@ const GLchar Yglprg_vpd1_normal_f[] =
       "  vec2 addr = v_texcoord.st;                        \n"
       "  addr.s = addr.s / (v_texcoord.q);                 \n"
       "  addr.t = addr.t / (v_texcoord.q);                 \n"
-      "  gl_FragColor = texture2D( s_texture, addr );      \n"
-      "  if( gl_FragColor.a == 0.0 ) discard;                \n"
+      "  vec4 FragColor = texture2D( s_texture, addr );      \n"
+      "  if( FragColor.a == 0.0 ) discard;                \n"
+      "  gl_FragColor = FragColor;\n "
       "}                                                   \n";
 const GLchar * pYglprg_vdp1_normal_f[] = {Yglprg_vpd1_normal_f, NULL};
 
@@ -466,7 +467,7 @@ int Ygl_uniformStartUserClip(void * p )
 {
    YglProgram * prg;
    prg = p;
-
+#if 0
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
 
@@ -521,7 +522,7 @@ int Ygl_uniformStartUserClip(void * p )
    }else{
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
-
+#endif
    return 0;
 }
 
@@ -529,10 +530,12 @@ int Ygl_cleanupStartUserClip(void * p ){return 0;}
 
 int Ygl_uniformEndUserClip(void * p )
 {
+ #if 0
    YglProgram * prg;
    prg = p;
    glDisable(GL_STENCIL_TEST);
    glStencilFunc(GL_ALWAYS,0,0xFF);
+#endif
    return 0;
 }
 
@@ -544,7 +547,7 @@ int Ygl_uniformStartVDP2Window(void * p )
    YglProgram * prg;
    prg = p;
 
-
+#if 0
    glEnable(GL_STENCIL_TEST);
    glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 
@@ -581,7 +584,7 @@ int Ygl_uniformStartVDP2Window(void * p )
 
       }
    }
-
+#endif
    return 0;
 }
 
@@ -589,10 +592,12 @@ int Ygl_cleanupStartVDP2Window(void * p ){return 0;}
 
 int Ygl_uniformEndVDP2Window(void * p )
 {
+ #if 0
    YglProgram * prg;
    prg = p;
    glDisable(GL_STENCIL_TEST);
    glStencilFunc(GL_ALWAYS,0,0xFF);
+ #endif
    return 0;
 }
 
@@ -631,25 +636,26 @@ const GLchar Yglprg_vdp2_drawfb_f[] =
       "void main()                                          \n"
       "{                                                    \n"
       "  vec2 addr = v_texcoord;                         \n"
-      "  vec4 fbColor = texture(s_vdp1FrameBuffer,addr);  \n"
+      "  highp vec4 fbColor = texture(s_vdp1FrameBuffer,addr);  \n"
       "  int additional = int(fbColor.a * 255.0);           \n"
-      "  float alpha = float((additional/8)*8)/255.0;  \n"
-      "  float depth = clamp( float(additional&0x07)/10.0, 0.0, 1.0); \n"
+      "  highp float alpha = float((additional/8)*8)/255.0;  \n"
+      "  highp float depth = (float(additional&0x07)/10.0) + 0.05; \n"
       "  if( depth < u_from || depth > u_to ){ discard;return;} \n"
       "  if( alpha > 0.0){ \n"
       "     fragColor = fbColor;                            \n"
-      "     fragColor.r = clamp( fragColor.r+u_coloroffset.r, 0.0, 1.0);\n"
-      "     fragColor.g = clamp( fragColor.g+u_coloroffset.r, 0.0, 1.0);\n"
-      "     fragColor.b = clamp( fragColor.b+u_coloroffset.r, 0.0, 1.0);\n"
+        "   fragColor += u_coloroffset;  \n"
       "     fragColor.a = alpha;\n"
-      "     gl_FragDepth = depth;\n"
+      "     gl_FragDepth =  (depth+1.0)/2.0;\n"
       "  } else { \n"
       "     discard;\n"
       "  }\n"
       "}                                                    \n";
 
-
-
+#if 0
+"     fragColor.r = clamp( fragColor.r+u_coloroffset.x, 0.0, 1.0);\n"
+"     fragColor.g = clamp( fragColor.g+u_coloroffset.x, 0.0, 1.0);\n"
+"     fragColor.b = clamp( fragColor.b+u_coloroffset.x, 0.0, 1.0);\n"
+#endif
 #if 0
 const GLchar Yglprg_vdp2_drawfb_f[] = \
 "uniform sampler2D vdp1FrameBuffer;\n" \
@@ -682,7 +688,7 @@ int Ygl_uniformVDP2DrawFramebuffer( void * p, float from, float to , float * off
    glActiveTexture(GL_TEXTURE0);
    glUniform1f(idfrom,from);
    glUniform1f(idto,to);
-   glUniform4f(idcoloroffset,offsetcol[0],offsetcol[1],offsetcol[2],offsetcol[3]);
+   glUniform4fv(idcoloroffset,1,offsetcol);
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
 }
@@ -731,7 +737,7 @@ int YglInitShader( int id, const GLchar * vertex[], const GLchar * frag[] )
        return -1;
     }
 
-    glShaderSource(fshader, 1, frag, NULL);
+    glShaderSource(fshader, 1,frag, NULL);
     glCompileShader(fshader);
     glGetShaderiv(fshader, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE) {
@@ -977,4 +983,4 @@ int YglProgramChange( YglLevel * level, int prgid )
 
 }
 
-#endif
+//#endif

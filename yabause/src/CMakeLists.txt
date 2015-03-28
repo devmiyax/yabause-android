@@ -3,6 +3,10 @@ project(yabause)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 
+# todo need to be selectable
+add_definitions(-D_OGLES3_)
+
+
 set(yabause_SOURCES
 	bios.c
 	cdbase.c cheat.c coffelf.c cs0.c cs1.c cs2.c
@@ -16,7 +20,7 @@ set(yabause_SOURCES
 	titan/titan.c
 	vdp1.c vdp2.c vdp2debug.c vidogl.c vidshared.c vidsoft.c
 	yabause.c )
-if (ANDROID)
+if (1)
 set(yabause_SOURCES
 	${yabause_SOURCES}
 	ygles2.c

@@ -45,7 +45,9 @@
     #ifdef __APPLE__
         #include <OpenGL/gl.h>
     #else
-        #include <GL/gl.h>
+#define GL_GLEXT_PROTOTYPES 1
+#define GLX_GLXEXT_PROTOTYPES 1
+#include <GLFW/glfw3.h>
     #endif
 #endif // _arch_dreamcast
 
@@ -233,14 +235,14 @@ void YglMatrixMultiply(YglMatrix *result, YglMatrix *srcA, YglMatrix *srcB);
 
 #else // defined(__APPLE__) || defined(__ANDROID__)
 
-#if 1  // Does anything need this?  It breaks a bunch of prototypes if
+#if 0  // Does anything need this?  It breaks a bunch of prototypes if
        // GLchar is typedef'd instead of #define'd  --AC
 #ifndef GLchar
 #define GLchar GLbyte
 #endif
 #endif  // 0
 
-
+#if 0
 extern GLuint (STDCALL *glCreateProgram)(void);
 extern GLuint (STDCALL *glCreateShader)(GLenum);
 extern void (STDCALL *glShaderSource)(GLuint,GLsizei,const GLchar **,const GLint *);
@@ -286,6 +288,7 @@ extern PFNGLFRAMEBUFFERTEXTURELAYERPROC glFramebufferTextureLayer;
 extern PFNGLUNIFORM4FPROC glUniform4f;
 extern PFNGLUNIFORM1FPROC glUniform1f;
 extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+#endif
 
 #ifdef WIN32
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;

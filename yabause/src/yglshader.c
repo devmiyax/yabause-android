@@ -242,6 +242,7 @@ int Ygl_cleanupHalfTrans(void * p )
  * ----------------------------------------------------------------------------------*/
 int Ygl_uniformStartUserClip(void * p )
 {
+ #if 0
    YglProgram * prg;
    prg = p;
 
@@ -295,7 +296,7 @@ int Ygl_uniformStartUserClip(void * p )
    }else{
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
-
+#endif
    return 0;
 }
 
@@ -318,7 +319,7 @@ int Ygl_uniformStartVDP2Window(void * p )
    YglProgram * prg;
    prg = p;
 
-
+#if 0
    glEnable(GL_STENCIL_TEST);
    glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 
@@ -352,7 +353,7 @@ int Ygl_uniformStartVDP2Window(void * p )
 
       }
    }
-
+#endif
    return 0;
 }
 

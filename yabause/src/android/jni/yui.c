@@ -283,6 +283,7 @@ int initEgl( ANativeWindow* window )
     EGLContext context;
     EGLint width;
     EGLint height;
+    int tmp;
     GLfloat ratio;
     int attrib_list[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
 
@@ -349,7 +350,13 @@ int initEgl( ANativeWindow* window )
 //    g_width = width;
 //    g_height = height;
 
-
+/*
+   tmp = width / 320;
+   width = 320 * tmp;
+   tmp = height /224;
+   height = 224 * tmp;
+   width = 320 * tmp;
+*/
    printf("%s",glGetString(GL_VENDOR));
    printf("%s",glGetString(GL_RENDERER));
    printf("%s",glGetString(GL_VERSION));
