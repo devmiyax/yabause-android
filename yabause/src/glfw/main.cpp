@@ -9,6 +9,9 @@
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg.h"
 #include "nanovg_gl.h"
+#include "perf.h"
+#include "Roboto-Bold.h"
+#include "Roboto-Regular.h"
 
 using std::map;
 
@@ -78,6 +81,21 @@ VideoInterface_struct *VIDCoreList[] = {
 };
 
 GLFWwindow* g_window = NULL;
+PerfGraph fps;
+NVGcontext* vg = NULL;
+
+void DrawDebugInfo()
+{
+     float pxRatio;
+    int winWidth, winHeight;
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(g_window, &winWidth, &winHeight);
+    pxRatio = (float)fbWidth / (float)winWidth;
+    glfwGetFramebufferSize(g_window, &fbWidth, &fbHeight);
+    nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
+    renderGraph(vg, 5,5, &fps);
+    nvgEndFrame(vg);
+}
 
 void YuiErrorMsg(const char *string)
 {
@@ -86,6 +104,7 @@ void YuiErrorMsg(const char *string)
 
 void YuiSwapBuffers(void)
 {
+    DrawDebugInfo();
 	glfwSwapBuffers(g_window);
 }
 
@@ -117,11 +136,7 @@ int yabauseinit()
 
 	yinit.m68kcoretype = M68KCORE_C68K;
 	yinit.percoretype = PERCORE_DUMMY;
-	#ifdef SH2_DYNAREC
-	yinit.sh2coretype = SH2CORE_INTERPRETER; //2;
-	#else
-	yinit.sh2coretype = SH2CORE_DEFAULT;
-	#endif
+    yinit.sh2coretype = 0;
 	//yinit.vidcoretype = VIDCORE_SOFT;
 	yinit.vidcoretype = 1;
 	yinit.sndcoretype = SNDCORE_DUMMY;
@@ -136,7 +151,7 @@ int yabauseinit()
 	yinit.mpegpath = mpegpath;
 	yinit.cartpath = cartpath;
 	yinit.videoformattype = VIDEOFORMATTYPE_NTSC;
-	yinit.frameskip = 1;
+    yinit.frameskip = 0;
 	res = YabauseInit(&yinit);
     if( res == -1)
     {
@@ -181,12 +196,14 @@ int YuiSetVideoMode(int width, int height, int bpp, int fullscreen) {
 int main( int argc, char * argcv[] )
 {
 
-    NVGcontext* vg = NULL;
+    int fontNormal, fontBold;
 	int width = 1280;
 	int height = 720;
 
 	if (!glfwInit())
 		    exit(EXIT_FAILURE);
+
+
 
   glfwSetErrorCallback(error_callback);
     //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -233,17 +250,40 @@ int main( int argc, char * argcv[] )
         return -1;
     }
 
+    fontNormal = nvgCreateFontMem(vg, "sans", Roboto_Regular_ttf, Roboto_Regular_ttf_len,0);
+    if (fontNormal == -1) {
+        printf("Could not add font italic.\n");
+        return -1;
+    }
+    fontBold = nvgCreateFontMem(vg, "sans", Roboto_Bold_ttf, Roboto_Bold_ttf_len,0);
+    if (fontBold == -1) {
+        printf("Could not add font bold.\n");
+        return -1;
+    }
+
+    initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
+    glfwSetTime(0);
+    double prevt = glfwGetTime();
 
 	while (!glfwWindowShouldClose(g_window))
 	{
-			int width, height;
-			glfwGetFramebufferSize(g_window, &width, &height);
+        double t, dt;
 
-			//glClear( GL_COLOR_BUFFER_BIT );
-			YabauseExec();
-			glfwPollEvents();
+
+        t = glfwGetTime();
+        dt = t - prevt;
+        prevt = t;
+
+
+        YabauseExec();
+
+
+        updateGraph(&fps, dt);
+
+        glfwPollEvents();
 	}
 
+    nvgDeleteGLES3(vg);
 	YabauseDeInit();
 	glfwDestroyWindow(g_window);
 	glfwTerminate();

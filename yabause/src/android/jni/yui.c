@@ -186,7 +186,7 @@ void YuiSwapBuffers(void)
    {
       return;
    }
-
+   OSDDisplayMessages();
    eglSwapBuffers(g_Display,g_Surface);
 }
 
@@ -216,16 +216,34 @@ JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_initViewport( JNI
    return 0;
 }
 
-int Java_org_yabause_android_YabauseRunnable_lockGL()
+JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_lockGL()
 {
    pthread_mutex_lock(&g_mtxGlLock);
 }
 
-int Java_org_yabause_android_YabauseRunnable_unlockGL()
+JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_unlockGL()
 {
    pthread_mutex_unlock(&g_mtxGlLock);
 }
 
+JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_toggleShowFps( JNIEnv* env )
+{
+    printf("%s","Java_org_yabause_android_YabauseRunnable_toggleShowFps");
+   ToggleFPS();
+}
+
+static int enableautofskip = 0;
+JNIEXPORT int JNICALL Java_org_yabause_android_YabauseRunnable_toggleFrameSkip( JNIEnv* env )
+{
+    enableautofskip = 1 - enableautofskip;
+
+     printf("%s:%d","Java_org_yabause_android_YabauseRunnable_toggleFrameSkip",enableautofskip);
+
+    if (enableautofskip)
+       EnableAutoFrameSkip();
+    else
+       DisableAutoFrameSkip();
+}
 
 jint
 Java_org_yabause_android_YabauseRunnable_init( JNIEnv* env, jobject obj, jobject yab, jobject bitmap )
@@ -386,7 +404,7 @@ int initEgl( ANativeWindow* window )
     yinit.cartpath = cartpath;
     yinit.videoformattype = VIDEOFORMATTYPE_NTSC;
     yinit.frameskip = 1;
-
+    enableautofskip = yinit.frameskip;
     res = YabauseInit(&yinit);
 
     PerPortReset();

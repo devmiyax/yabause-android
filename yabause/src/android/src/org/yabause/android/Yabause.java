@@ -72,6 +72,8 @@ class YabauseRunnable implements Runnable
     public static native int drawScreen();
     public static native int lockGL();
     public static native int unlockGL();
+    public static native int toggleShowFps();
+    public static native int toggleFrameSkip();
     Yabause _yabause;
     
     private boolean inited;
@@ -285,6 +287,12 @@ public class Yabause extends Activity
         case R.id.resume:
             yabauseThread.resume();
             return true;
+        case R.id.tfps:
+        	yabauseThread.toggleShowFps();
+        	return true;
+        case R.id.tframeskip:
+        	yabauseThread.toggleFrameSkip();
+        	return true;
         default:
             return super.onOptionsItemSelected(item);
         }

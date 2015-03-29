@@ -12,6 +12,7 @@ include_directories( ${YABAUSE_INCLUDE_DIR}  ${PORT_INCLUDE_DIRS})
 set(yabause_glfw_SOURCES
     main.cpp
     nanovg.c
+perf.c
 )
 
 

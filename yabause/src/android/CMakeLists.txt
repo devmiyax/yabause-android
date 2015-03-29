@@ -19,7 +19,17 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 		jni/yui.c
 		jni/miniegl.h
 		jni/sndaudiotrack.c
-        jni/sndaudiotrack.h
+                jni/osdcore.c
+                jni/osdcore.h
+                jni/nanovg/Roboto-Bold.h
+                jni/nanovg/Roboto-Regular.h
+                jni/nanovg/fontstash.h
+                jni/nanovg/nanovg.h
+                jni/nanovg/nanovg_gl.h
+                jni/nanovg/nanovg_gl_utils.h
+                jni/nanovg/stb_image.h
+                jni/nanovg/stb_truetype.h
+                jni/sndaudiotrack.h
 		jni/sndopensl.c
 		jni/sndopensl.h
 		src/org/yabause/android/Config.java
@@ -89,10 +99,13 @@ add_custom_command(
 	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/libs/armeabi/libyabause.so"
 	COMMAND "${NDK_BUILD}"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/libyabause.a"
+        DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/nanovg/nanovg.c"
+        DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/osdcore.c"
+        DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/osdcore.h"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/yui.c"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/miniegl.h"
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.c"
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.h"
+        DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.c"
+        DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndaudiotrack.h"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.c"
 	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/jni/sndopensl.h"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
