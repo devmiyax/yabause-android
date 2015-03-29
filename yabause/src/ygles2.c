@@ -1823,6 +1823,7 @@ void YglOnScreenDebugMessage(char *string, ...) {
 
 //////////////////////////////////////////////////////////////////////////////
 
+#if 0
 int YglIsCached(u32 addr, YglCache * c ) {
    int i = 0;
 
@@ -1853,7 +1854,7 @@ void YglCacheAdd(u32 addr, YglCache * c) {
 void YglCacheReset(void) {
    cachelistsize = 0;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////////
 
 

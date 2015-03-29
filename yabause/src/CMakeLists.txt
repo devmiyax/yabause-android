@@ -6,6 +6,9 @@ include(CheckIncludeFile)
 # todo need to be selectable
 add_definitions(-D_OGLES3_)
 
+if (ANDROID)
+add_definitions(-DYAB_PORT_OSD)
+endif()
 
 set(yabause_SOURCES
 	bios.c
@@ -23,6 +26,7 @@ set(yabause_SOURCES
 if (1)
 set(yabause_SOURCES
 	${yabause_SOURCES}
+        yglcache.cpp
 	ygles2.c
 	yglshaderes2.c )
 else()
@@ -366,11 +370,13 @@ endif ()
 #if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
 #	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 #endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv5tel")
-#if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
-#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -mcpu=cortex-a8 -mfpu=vfp -mfloat-abi=softfp")
-#endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -mcpu=cortex-a8 -mfpu=vfp -mfloat-abi=softfp")
+    set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -O3 -mcpu=cortex-a8 -mfpu=vfp -mfloat-abi=softfp")
+endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
 if(ANDROID)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -mcpu=cortex-a9 -mfpu=neon -ffast-math")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -mcpu=cortex-a9 -mfpu=neon -ffast-math -fno-exceptions -fno-rtti  ")
 endif()
 
 # Warnings defined to know when we're breaking compilation with MSVC

@@ -24,6 +24,7 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
                 jni/nanovg/Roboto-Bold.h
                 jni/nanovg/Roboto-Regular.h
                 jni/nanovg/fontstash.h
+                jni/nanovg/nanovg.c
                 jni/nanovg/nanovg.h
                 jni/nanovg/nanovg_gl.h
                 jni/nanovg/nanovg_gl_utils.h
@@ -72,7 +73,7 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 	endforeach()
 endif()
 
-set(YABAUSE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
+set(YABAUSE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_CURRENT_SOURCE_DIR}/jni/nanovg")
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/jni/Android.mk.in
 	${CMAKE_CURRENT_BINARY_DIR}/jni/Android.mk

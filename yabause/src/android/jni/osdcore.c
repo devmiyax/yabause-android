@@ -36,11 +36,11 @@
 #include <GLES3/gl3.h>
 #include <GLES3/gl3ext.h>
 
-#include <nanovg/nanovg.h>
+#include "nanovg.h"
 #define NANOVG_GLES3_IMPLEMENTATION
-#include <nanovg/nanovg_gl.h>
-#include "nanovg/Roboto-Bold.h"
-#include "nanovg/Roboto-Regular.h"
+#include "nanovg_gl.h"
+#include "Roboto-Bold.h"
+#include "Roboto-Regular.h"
 
 static int OSDDummyInit(void);
 static void OSDDummyDeInit(void);
