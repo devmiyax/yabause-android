@@ -72,6 +72,10 @@ typedef struct {
 	int dst;
     int uclipmode;
     int blendmode;
+    s32 cor;
+    s32 cog;
+    s32 cob;
+
 } YglSprite;
 
 typedef struct {
@@ -135,6 +139,8 @@ typedef struct {
    GLuint texcoordp;
    GLuint mtxModelView;
    GLuint mtxTexture;
+   GLuint color_offset;
+   float color_offset_val[4];
    int (*setupUniform)(void *);
    int (*cleanupUniform)(void *);
 } YglProgram;

@@ -934,6 +934,11 @@ float * YglQuad(YglSprite * input, YglTexture * output, YglCache * c) {
    program = YglGetProgram(input,prg);
    if( program == NULL ) return NULL;
 
+   program->color_offset_val[0] = (float)(input->cor)/255.0f;
+   program->color_offset_val[1] = (float)(input->cog)/255.0f;
+   program->color_offset_val[2] = (float)(input->cob)/255.0f;
+   program->color_offset_val[3] = 0;
+   //info->cor
 
    pos = program->quads + program->currentQuad;
    pos[0] = input->vertices[0];
@@ -1218,6 +1223,11 @@ void YglCachedQuad(YglSprite * input, YglCache * cache) {
 
    program = YglGetProgram(input,prg);
    if( program == NULL ) return;
+
+   program->color_offset_val[0] = (float)(input->cor)/255.0f;
+   program->color_offset_val[1] = (float)(input->cog)/255.0f;
+   program->color_offset_val[2] = (float)(input->cob)/255.0f;
+   program->color_offset_val[3] = 0;
 
    x = cache->x;
    y = cache->y;

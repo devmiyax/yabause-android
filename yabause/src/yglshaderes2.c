@@ -76,12 +76,13 @@ const GLchar Yglprg_normal_f[] =
       "precision highp float;                            \n"
       "varying vec4 v_texcoord;                            \n"
       "uniform sampler2D s_texture;                        \n"
+      "uniform vec4 u_color_offset;    \n"
       "void main()                                         \n"
       "{                                                   \n"
       "  vec2 addr = v_texcoord.st;                        \n"
       "  vec4 txcol = texture2D( s_texture, addr );         \n"
       "  if(txcol.a > 0.0)\n                                 "
-      "     gl_FragColor = txcol;\n                         "
+      "     gl_FragColor = clamp(txcol+u_color_offset,vec4(0.0),vec4(1.0));\n                         "
       "  else \n                                            "
       "     discard;\n                                      "
       "}                                                   \n";
@@ -94,6 +95,7 @@ int Ygl_uniformNormal(void * p )
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
    glUniform1i(glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"s_texture"), 0);
+   glUniform4fv(prg->color_offset,1,prg->color_offset_val);
    return 0;
 }
 
@@ -885,8 +887,10 @@ int YglProgramChange( YglLevel * level, int prgid )
       current->texcoordp       = glGetAttribLocation(_prgid[PG_NORMAL],(const GLchar *)"a_texcoord");
       current->mtxModelView    = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_mvpMatrix");
       current->mtxTexture      = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_texMatrix");
+      current->color_offset    = glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"u_color_offset");
       id = glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"s_texture");
       glUniform1i(id, 0);
+
    }else if( prgid == PG_VDP1_NORMAL )
    {
       current->setupUniform    = Ygl_uniformVdp1Normal;

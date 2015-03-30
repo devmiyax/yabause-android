@@ -1594,6 +1594,9 @@ static void Vdp2DrawPattern(vdp2draw_struct *info, YglTexture *texture)
       }
 
    }
+   tile.cor = info->cor;
+   tile.cog = info->cog;
+   tile.cob = info->cob;
 
    if (1 == YglIsCached(cacheaddr,&c) )
    {
@@ -1806,12 +1809,19 @@ static u32 FASTCALL DoNothing(UNUSED void *info, u32 pixel)
 
 //////////////////////////////////////////////////////////////////////////////
 
+inline FASTCALL DoColorOffset(void *info, u32 pixel)
+{
+    return pixel;
+}
+
+#if 0
 static u32 FASTCALL DoColorOffset(void *info, u32 pixel)
 {
     return COLOR_ADD(pixel, ((vdp2draw_struct *)info)->cor,
                      ((vdp2draw_struct *)info)->cog,
                      ((vdp2draw_struct *)info)->cob);
 }
+#endif
 
 
 
