@@ -125,6 +125,7 @@ enum
 typedef struct {
    int prgid;
    GLuint prg;
+   GLuint vertexBuffer;
    int * quads;
    float * textcoords;
    float * vertexAttribute;
