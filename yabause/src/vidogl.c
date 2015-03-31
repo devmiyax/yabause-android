@@ -2419,11 +2419,11 @@ void VIDOGLVdp1NormalSpriteDraw(void)
       {
          if (1 == YglIsCached(tmp,&cash) )
          {
-            YglCachedQuad(&sprite, &cash);
+            YglCacheQuadGrowShading(&sprite, NULL, &cash);
             return;
          }
 
-         YglQuad(&sprite, &texture,&cash);
+         YglQuadGrowShading(&sprite, &texture, NULL, &cash);
          YglCacheAdd(tmp,&cash);
 
          Vdp1ReadTexture(&cmd, &sprite, &texture);
@@ -2596,11 +2596,11 @@ void VIDOGLVdp1ScaledSpriteDraw(void)
       {
          if (1 == YglIsCached(tmp,&cash) )
          {
-            YglCachedQuad(&sprite, &cash);
+			 YglCacheQuadGrowShading(&sprite, NULL,&cash);
             return;
          }
 
-         YglQuad(&sprite, &texture,&cash);
+         YglQuadGrowShading(&sprite, &texture,NULL,&cash);
          YglCacheAdd(tmp,&cash);
 
          Vdp1ReadTexture(&cmd, &sprite, &texture);
@@ -2701,11 +2701,11 @@ void VIDOGLVdp1DistortedSpriteDraw(void)
       {
          if (1 == YglIsCached(tmp,&cash) )
          {
-            YglCachedQuad(&sprite, &cash);
+            YglCacheQuadGrowShading(&sprite, NULL,&cash);
             return;
          }
 
-         YglQuad(&sprite, &texture,&cash);
+         YglQuadGrowShading(&sprite, &texture,NULL,&cash);
          YglCacheAdd(tmp,&cash);
 
          Vdp1ReadTexture(&cmd, &sprite, &texture);
@@ -2805,7 +2805,7 @@ void VIDOGLVdp1PolygonDraw(void)
    {
        YglQuadGrowShading(&polygon, &texture,col,NULL);
    }else{
-      YglQuad(&polygon, &texture,NULL);
+      YglQuadGrowShading(&polygon, &texture,NULL,NULL);
    }
 
    if (color == 0)

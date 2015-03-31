@@ -1150,35 +1150,39 @@ int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors,Yg
 
    // Color
    vtxa = (program->vertexAttribute + (program->currentQuad * 2));
-   vtxa[0] = colors[0];
-   vtxa[1] = colors[1];
-   vtxa[2] = colors[2];
-   vtxa[3] = colors[3];
+   if( colors == NULL ) {
+      memset(vtxa,0,sizeof(float)*24);
+   } else {
+	   vtxa[0] = colors[0];
+	   vtxa[1] = colors[1];
+	   vtxa[2] = colors[2];
+	   vtxa[3] = colors[3];
 
-   vtxa[4] = colors[4];
-   vtxa[5] = colors[5];
-   vtxa[6] = colors[6];
-   vtxa[7] = colors[7];
+	   vtxa[4] = colors[4];
+	   vtxa[5] = colors[5];
+	   vtxa[6] = colors[6];
+	   vtxa[7] = colors[7];
 
-   vtxa[8] = colors[8];
-   vtxa[9] = colors[9];
-   vtxa[10] = colors[10];
-   vtxa[11] = colors[11];
+	   vtxa[8] = colors[8];
+	   vtxa[9] = colors[9];
+	   vtxa[10] = colors[10];
+	   vtxa[11] = colors[11];
 
-   vtxa[12] = colors[0];
-   vtxa[13] = colors[1];
-   vtxa[14] = colors[2];
-   vtxa[15] = colors[3];
+	   vtxa[12] = colors[0];
+	   vtxa[13] = colors[1];
+	   vtxa[14] = colors[2];
+	   vtxa[15] = colors[3];
 
-   vtxa[16] = colors[8];
-   vtxa[17] = colors[9];
-   vtxa[18] = colors[10];
-   vtxa[19] = colors[11];
+	   vtxa[16] = colors[8];
+	   vtxa[17] = colors[9];
+	   vtxa[18] = colors[10];
+	   vtxa[19] = colors[11];
 
-   vtxa[20] = colors[12];
-   vtxa[21] = colors[13];
-   vtxa[22] = colors[14];
-   vtxa[23] = colors[15];
+	   vtxa[20] = colors[12];
+	   vtxa[21] = colors[13];
+	   vtxa[22] = colors[14];
+	   vtxa[23] = colors[15];
+   }
 
    // texture
    tmp = (texturecoordinate_struct *)(program->textcoords + (program->currentQuad * 2));
