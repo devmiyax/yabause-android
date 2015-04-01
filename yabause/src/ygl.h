@@ -18,6 +18,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
+#define USEVBO 1
+
 #if defined(HAVE_LIBGL) || defined(__ANDROID__)
 
 #ifdef __ANDROID__

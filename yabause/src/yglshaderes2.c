@@ -295,6 +295,7 @@ int Ygl_uniformGlowShading(void * p )
    {
       glEnableVertexAttribArray(prg->vaid);
       glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
+      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(prg->maxQuad*sizeof(int)*sizeof(float)*2));
    }
    return 0;
 }
@@ -369,6 +370,7 @@ int Ygl_uniformGlowShadingHalfTrans(void * p )
    {
       glEnableVertexAttribArray(prg->vaid);
       glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
+      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(prg->maxQuad*sizeof(int)*sizeof(float)*2));
    }
 
    glUniform1i(id_sprite, 0);
@@ -867,7 +869,7 @@ int YglProgramChange( YglLevel * level, int prgid )
 
       level->prg[level->prgcurrent].currentQuad = 0;
       level->prg[level->prgcurrent].maxQuad = 12 * 64;
-#if 1 // USEVBO
+#if  USEVBO
       maxsize = level->prg[level->prgcurrent].maxQuad * (sizeof(int) + sizeof(float) * 2 + sizeof(float)*2);
       glGenBuffers(1, &level->prg[level->prgcurrent].vertexBuffer);
       if( level->prg[level->prgcurrent].vertexBuffer == 0 )
@@ -880,9 +882,13 @@ int YglProgramChange( YglLevel * level, int prgid )
                    NULL,
                    GL_STREAM_DRAW);
       dataPointer = glMapBufferRange(GL_ARRAY_BUFFER, 0, maxsize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+      if( dataPointer == NULL )
+      {
+          exit(1);
+      }
       level->prg[level->prgcurrent].quads = (int*)(dataPointer);
-      level->prg[level->prgcurrent].textcoords = (float *)(level->prg[level->prgcurrent].quads+level->prg[level->prgcurrent].maxQuad*sizeof(int) );
-      level->prg[level->prgcurrent].vertexAttribute = (float *)(level->prg[level->prgcurrent].textcoords+level->prg[level->prgcurrent].maxQuad*sizeof(float)*2 );
+      level->prg[level->prgcurrent].textcoords = (float *)(level->prg[level->prgcurrent].quads+level->prg[level->prgcurrent].maxQuad );
+      level->prg[level->prgcurrent].vertexAttribute = (float *)(level->prg[level->prgcurrent].textcoords+level->prg[level->prgcurrent].maxQuad*2 );
 
 #else
       if ((level->prg[level->prgcurrent].quads = (int *) malloc(level->prg[level->prgcurrent].maxQuad * sizeof(int))) == NULL)
