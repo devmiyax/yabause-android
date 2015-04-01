@@ -871,25 +871,13 @@ int YglProgramChange( YglLevel * level, int prgid )
       level->prg[level->prgcurrent].maxQuad = 12 * 64;
 #if  USEVBO
       maxsize = level->prg[level->prgcurrent].maxQuad * (sizeof(int) + sizeof(float) * 2 + sizeof(float)*2);
-      glGenBuffers(1, &level->prg[level->prgcurrent].vertexBuffer);
-      if( level->prg[level->prgcurrent].vertexBuffer == 0 )
-      {
-          exit(1);
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, level->prg[level->prgcurrent].vertexBuffer);
-      glBufferData(GL_ARRAY_BUFFER,
-                   maxsize,
-                   NULL,
-                   GL_STREAM_DRAW);
-      dataPointer = glMapBufferRange(GL_ARRAY_BUFFER, 0, maxsize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-      if( dataPointer == NULL )
-      {
-          exit(1);
+      dataPointer = YglGetVertexBuffer(maxsize);
+      if( dataPointer == NULL ){
+          return -1;
       }
       level->prg[level->prgcurrent].quads = (int*)(dataPointer);
       level->prg[level->prgcurrent].textcoords = (float *)(level->prg[level->prgcurrent].quads+level->prg[level->prgcurrent].maxQuad );
       level->prg[level->prgcurrent].vertexAttribute = (float *)(level->prg[level->prgcurrent].textcoords+level->prg[level->prgcurrent].maxQuad*2 );
-
 #else
       if ((level->prg[level->prgcurrent].quads = (int *) malloc(level->prg[level->prgcurrent].maxQuad * sizeof(int))) == NULL)
          return -1;
