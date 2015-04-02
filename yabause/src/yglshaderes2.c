@@ -294,7 +294,7 @@ int Ygl_uniformGlowShading(void * p )
    if( prg->vertexAttribute != NULL )
    {
       glEnableVertexAttribArray(prg->vaid);
-      glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
+      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
       //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(prg->maxQuad*sizeof(int)*sizeof(float)*2));
    }
    return 0;
@@ -369,8 +369,6 @@ int Ygl_uniformGlowShadingHalfTrans(void * p )
    if( prg->vertexAttribute != NULL )
    {
       glEnableVertexAttribArray(prg->vaid);
-      glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
-      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(prg->maxQuad*sizeof(int)*sizeof(float)*2));
    }
 
    glUniform1i(id_sprite, 0);

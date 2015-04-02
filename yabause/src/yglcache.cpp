@@ -67,7 +67,7 @@ private:
     unsigned long    m_ulBlockSize;//Memory pool size. Memory pool is make of memory unit.
 
 public:
-    CVboPool(unsigned long lUnitNum = 50, unsigned long lUnitSize = 1024);
+    CVboPool(unsigned long lUnitNum = 50, unsigned long lUnitSize = 480000 );
     ~CVboPool();
 
     void* Alloc(unsigned long ulSize, bool bUseMemPool = true); //Allocate memory unit
@@ -75,6 +75,7 @@ public:
 
     void unMap();
     void reMap();
+	GLuint getVboId(){ return _vertexBuffer; }
 };
 
 CVboPool::CVboPool(unsigned long ulUnitNum,unsigned long ulUnitSize) :
@@ -84,7 +85,7 @@ CVboPool::CVboPool(unsigned long ulUnitNum,unsigned long ulUnitSize) :
 {
     glGenBuffers(1, &_vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, m_ulBlockSize,NULL,GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_ulBlockSize,NULL,GL_DYNAMIC_DRAW);
     m_pMemBlock = glMapBufferRange(GL_ARRAY_BUFFER, 0, m_ulBlockSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
     m_ulUnitNum = ulUnitNum;
     //m_pMemBlock = malloc(m_ulBlockSize);     //Allocate a memory block.
@@ -116,8 +117,14 @@ void CVboPool::unMap()
 
 void CVboPool::reMap()
 {
+    void *p;
     glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-    m_pMemBlock = glMapBufferRange(GL_ARRAY_BUFFER, 0, m_ulBlockSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+    p = glMapBufferRange(GL_ARRAY_BUFFER, 0, m_ulBlockSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+    if( p != m_pMemBlock )
+    {
+        printf("???\n");
+    }
+#if 0
     if(NULL != m_pMemBlock)
     {
         for(unsigned long i=0; i<m_ulUnitNum; i++)  //Link all mem unit . Create linked list.
@@ -134,6 +141,7 @@ void CVboPool::reMap()
             m_pFreeMemBlock = pCurUnit;
         }
     }
+#endif
 }
 
 
@@ -200,7 +208,7 @@ void CVboPool::Free( void* p )
 CVboPool * g_pool;
 
 int YglInitVertexBuffer( int initsize ) {
-    g_pool = new CVboPool( 1024, initsize/1024 );
+    g_pool = new CVboPool( 256, 480000 );
 }
 
 void YglDeleteVertexBuffer()
@@ -224,6 +232,16 @@ void * YglGetVertexBuffer( int size)
 int YglFreeVertexBuffer( void * p)
 {
     g_pool->Free(p);
+}
+
+int YglUserDirectVertexBuffer()
+{
+	 glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+int YglUserVertexBuffer()
+{
+	 glBindBuffer(GL_ARRAY_BUFFER, g_pool->getVboId() );
 }
 
 

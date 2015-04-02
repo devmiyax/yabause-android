@@ -240,6 +240,17 @@ void YglOrtho(YglMatrix *result, float left, float right, float bottom, float to
 void YglLoadIdentity(YglMatrix *result);
 void YglMatrixMultiply(YglMatrix *result, YglMatrix *srcA, YglMatrix *srcB);
 
+int YglInitVertexBuffer( int initsize );
+void YglDeleteVertexBuffer();
+int YglUnMapVertexBuffer();
+int YglMapVertexBuffer();
+void * YglGetVertexBuffer( int size);
+int YglFreeVertexBuffer( void * p);
+int YglUserDirectVertexBuffer();
+int YglUserVertexBuffer();
+
+
+
 #if defined(__APPLE__) || defined(__ANDROID__)
 
 #else // defined(__APPLE__) || defined(__ANDROID__)
