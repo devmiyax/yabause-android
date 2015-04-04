@@ -23,7 +23,7 @@ int YglIsCached(u32 addr, YglCache * c ) {
   c->x=pos->second.x;
   c->y=pos->second.y;
 
-  return 0;
+  return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////////

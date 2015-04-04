@@ -1865,8 +1865,14 @@ static INLINE void ReadVdp2ColorOffset(vdp2draw_struct *info, int mask)
 
       info->PostPixelFetchCalc = &DoColorOffset;
    }
-   else // color offset disable
+   else{ // color offset disable
+
       info->PostPixelFetchCalc = &DoNothing;
+    info->cor=0;
+      info->cob=0;
+      info->cog=0;
+
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////

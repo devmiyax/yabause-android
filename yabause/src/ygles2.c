@@ -694,9 +694,9 @@ int YglInit(int width, int height, unsigned int depth) {
       return -1;
 
    memset(_Ygl->levels,0,sizeof(YglLevel) * (depth+1) );
-
+#if USEVBO
    YglInitVertexBuffer( 1024* 1024 ); // VBO 4MByte
-
+#endif
    for(i = 0;i < (depth+1) ;i++) {
      _Ygl->levels[i].prgcurrent = 0;
      _Ygl->levels[i].uclipcurrent = 0;
