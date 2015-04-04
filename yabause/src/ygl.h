@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-#define USEVBO 1
+#define USEVBO 0
 
 #if defined(HAVE_LIBGL) || defined(__ANDROID__)
 
@@ -244,12 +244,11 @@ int YglInitVertexBuffer( int initsize );
 void YglDeleteVertexBuffer();
 int YglUnMapVertexBuffer();
 int YglMapVertexBuffer();
-void * YglGetVertexBuffer( int size);
-int YglFreeVertexBuffer( void * p);
 int YglUserDirectVertexBuffer();
 int YglUserVertexBuffer();
-
-
+int YglGetVertexBuffer( int size, void ** vpos, void **tcpos, void **vapos );
+int YglExpandVertexBuffer( int addsize, void ** vpos, void **tcpos, void **vapos );
+intptr_t YglGetOffset( void* address );
 
 #if defined(__APPLE__) || defined(__ANDROID__)
 
@@ -295,7 +294,7 @@ extern PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
 extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
 extern PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
 extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-extern PFNGLFRAMEBUFFERTEXTURE1DPROC glFramebufferTexture1D;
+extern PFNGLFRAMEBUFFERTEXTURE1DPROC glFramebufferTexture1D;34BC0
 extern PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
 extern PFNGLFRAMEBUFFERTEXTURE3DPROC glFramebufferTexture3D;
 extern PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;

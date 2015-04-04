@@ -251,13 +251,14 @@ int Ygl_cleanupVdp1Normal(void * p )
  *  VDP1 GlowShading Operation
  * ----------------------------------------------------------------------------------*/
 const GLchar Yglprg_vdp1_gouraudshading_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;                \n"
       "uniform mat4 u_texMatrix;                \n"
-      "attribute vec4 a_position;               \n"
-      "attribute vec4 a_texcoord;               \n"
-      "attribute vec4 a_grcolor;                \n"
-      "varying   vec4 v_texcoord;               \n"
-      "varying   vec4 v_vtxcolor;               \n"
+      "layout (location = 0) in vec4 a_position;               \n"
+      "layout (location = 1) in vec4 a_texcoord;               \n"
+      "layout (location = 2) in vec4 a_grcolor;                \n"
+      "out  vec4 v_texcoord;               \n"
+      "out  vec4 v_vtxcolor;               \n"
       "void main() {                            \n"
       "   v_vtxcolor  = a_grcolor;              \n"
       "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
@@ -268,19 +269,21 @@ const GLchar Yglprg_vdp1_gouraudshading_v[] =
 const GLchar * pYglprg_vdp1_gouraudshading_v[] = {Yglprg_vdp1_gouraudshading_v, NULL};
 
 const GLchar Yglprg_vdp1_gouraudshading_f[] =
+      "#version 300 es \n"
       "precision highp float;                                                 \n"
       "uniform sampler2D u_sprite;                                              \n"
-      "varying vec4 v_texcoord;                                                 \n"
-      "varying vec4 v_vtxcolor;                                                 \n"
+      "in vec4 v_texcoord;                                                 \n"
+      "in vec4 v_vtxcolor;                                                 \n"
+      "out vec4 fragColor;            \n"
       "void main() {                                                            \n"
       "  vec2 addr = v_texcoord.st;                                             \n"
       "  addr.s = addr.s / (v_texcoord.q);                                      \n"
       "  addr.t = addr.t / (v_texcoord.q);                                      \n"
-      "  vec4 spriteColor = texture2D(u_sprite,addr);                           \n"
+      "  vec4 spriteColor = texture(u_sprite,addr);                           \n"
       "  if( spriteColor.a == 0.0 ) discard;                                      \n"
-      "  gl_FragColor   = spriteColor;                                          \n"
-      "  gl_FragColor  += vec4(v_vtxcolor.r,v_vtxcolor.g,v_vtxcolor.b,0.0);     \n"
-      "  gl_FragColor.a = spriteColor.a;                                        \n"
+      "  fragColor   = spriteColor;                                          \n"
+      "  fragColor  = clamp(spriteColor+v_vtxcolor,vec4(0.0),vec4(1.0));     \n"
+      "  fragColor.a = spriteColor.a;                                        \n"
       "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_f[] = {Yglprg_vdp1_gouraudshading_f, NULL};
 
@@ -317,13 +320,14 @@ static int id_fbowidth;
 static int id_fboheight;
 
 const GLchar Yglprg_vdp1_gouraudshading_hf_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;                \n"
       "uniform mat4 u_texMatrix;                \n"
-      "attribute vec4 a_position;               \n"
-      "attribute vec4 a_texcoord;               \n"
-      "attribute vec4 a_grcolor;                \n"
-      "varying   vec4 v_texcoord;               \n"
-      "varying   vec4 v_vtxcolor;               \n"
+      "layout (location = 0) in vec4 a_position;               \n"
+      "layout (location = 1) in vec4 a_texcoord;               \n"
+      "layout (location = 2) in vec4 a_grcolor;                \n"
+      "out  vec4 v_texcoord;               \n"
+      "out  vec4 v_vtxcolor;               \n"
       "void main() {                            \n"
       "   v_vtxcolor  = a_grcolor;              \n"
       "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
@@ -334,28 +338,30 @@ const GLchar Yglprg_vdp1_gouraudshading_hf_v[] =
 const GLchar * pYglprg_vdp1_gouraudshading_hf_v[] = {Yglprg_vdp1_gouraudshading_hf_v, NULL};
 
 const GLchar Yglprg_vdp1_gouraudshading_hf_f[] =
+      "#version 300 es \n"
       "precision highp float;                                                                     \n"
       "uniform sampler2D u_sprite;                                                                  \n"
       "uniform sampler2D u_fbo;                                                                     \n"
       "uniform int u_fbowidth;                                                                      \n"
       "uniform int u_fbohegiht;                                                                     \n"
-      "varying vec4 v_texcoord;                                                                     \n"
-      "varying vec4 v_vtxcolor;                                                                     \n"
+      "in vec4 v_texcoord;                                                                     \n"
+      "in vec4 v_vtxcolor;                                                                     \n"
+      "out vec4 fragColor; \n "
       "void main() {                                                                                \n"
       "  vec2 addr = v_texcoord.st;                                                                 \n"
       "  vec2 faddr = vec2( gl_FragCoord.x/float(u_fbowidth), gl_FragCoord.y/float(u_fbohegiht));   \n"
       "  addr.s = addr.s / (v_texcoord.q);                                                          \n"
       "  addr.t = addr.t / (v_texcoord.q);                                                          \n"
-      "  vec4 spriteColor = texture2D(u_sprite,addr);                                               \n"
+      "  vec4 spriteColor = texture(u_sprite,addr);                                               \n"
       "  if( spriteColor.a == 0.0 ) discard;                                                          \n"
-      "  vec4 fboColor    = texture2D(u_fbo,faddr);                                                 \n"
+      "  vec4 fboColor    = texture(u_fbo,faddr);                                                 \n"
       "  spriteColor += vec4(v_vtxcolor.r,v_vtxcolor.g,v_vtxcolor.b,0.0);                           \n"
       "  if( fboColor.a > 0.0 && spriteColor.a > 0.0 )                                              \n"
       "  {                                                                                          \n"
-      "    gl_FragColor = spriteColor*0.5 + fboColor*0.5;                                           \n"
-      "    gl_FragColor.a = fboColor.a;                                                             \n"
+      "    fragColor = spriteColor*0.5 + fboColor*0.5;                                           \n"
+      "    fragColor.a = fboColor.a;                                                             \n"
       "  }else{                                                                                     \n"
-      "    gl_FragColor = spriteColor;                                                              \n"
+      "    fragColor = spriteColor;                                                              \n"
       "  }                                                                                          \n"
       "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_hf_f[] = {Yglprg_vdp1_gouraudshading_hf_f, NULL};
@@ -866,17 +872,21 @@ int YglProgramChange( YglLevel * level, int prgid )
       level->prg = tmp;
 
       level->prg[level->prgcurrent].currentQuad = 0;
-      level->prg[level->prgcurrent].maxQuad = 12 * 64;
 #if  USEVBO
-      maxsize = level->prg[level->prgcurrent].maxQuad * (sizeof(int) + sizeof(float) * 2 + sizeof(float)*2);
-      dataPointer = YglGetVertexBuffer(maxsize);
-      if( dataPointer == NULL ){
+       level->prg[level->prgcurrent].maxQuad = 14692;
+      maxsize = level->prg[level->prgcurrent].maxQuad;
+      if( YglGetVertexBuffer(maxsize,
+                             (void**)&level->prg[level->prgcurrent].quads,
+                             (void**)&level->prg[level->prgcurrent].textcoords,
+                             (void**)&level->prg[level->prgcurrent].vertexAttribute  ) != 0 ) {
           return -1;
       }
-      level->prg[level->prgcurrent].quads = (int*)(dataPointer);
-      level->prg[level->prgcurrent].textcoords = (float *)(level->prg[level->prgcurrent].quads+level->prg[level->prgcurrent].maxQuad );
-      level->prg[level->prgcurrent].vertexAttribute = (float *)(level->prg[level->prgcurrent].textcoords+level->prg[level->prgcurrent].maxQuad*2 );
+      if( level->prg[level->prgcurrent].quads == 0 )
+      {
+          int a=0;
+      }
 #else
+      level->prg[level->prgcurrent].maxQuad = 12*64;
       if ((level->prg[level->prgcurrent].quads = (int *) malloc(level->prg[level->prgcurrent].maxQuad * sizeof(int))) == NULL)
          return -1;
 
@@ -891,6 +901,7 @@ int YglProgramChange( YglLevel * level, int prgid )
    current = &level->prg[level->prgcurrent];
    level->prg[level->prgcurrent].prgid=prgid;
    level->prg[level->prgcurrent].prg=_prgid[prgid];
+   level->prg[level->prgcurrent].vaid = 0;
 
    if( prgid == PG_NORMAL )
    {
@@ -948,6 +959,7 @@ int YglProgramChange( YglLevel * level, int prgid )
    }
    else if( prgid == PG_VFP1_HALFTRANS )
    {
+
       GLuint id;
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformHalfTrans;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupHalfTrans;
@@ -958,6 +970,7 @@ int YglProgramChange( YglLevel * level, int prgid )
    }
    else if( prgid == PG_VFP1_GOURAUDSAHDING_HALFTRANS )
    {
+
       GLuint id;
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformGlowShadingHalfTrans;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupGlowShadingHalfTrans;

@@ -46,66 +46,44 @@ void YglCacheReset(void) {
 class CVboPool
 {
 private:
-    //The purpose of the structure`s definition is that we can operate linkedlist conveniently
-    struct _Unit                     //The type of the node of linkedlist.
-    {
-        struct _Unit *pPrev, *pNext;
-    };
-
     GLuint _vertexBuffer;
     void * _pMapBuffer;
     int _initsize;
 
-    void* m_pMemBlock;                //The address of memory pool.
+    unsigned char * m_pMemBlock;                //The address of memory pool.
+    unsigned long m_ulBlockSize;
 
-    //Manage all unit with two linkedlist.
-    struct _Unit*    m_pAllocatedMemBlock; //Head pointer to Allocated linkedlist.
-    struct _Unit*    m_pFreeMemBlock;      //Head pointer to Free linkedlist.
+    void * prepos;
 
-    unsigned long    m_ulUnitNum; //Memory unit size. There are much unit in memory pool.
-    unsigned long    m_ulUnitSize; //Memory unit size. There are much unit in memory pool.
-    unsigned long    m_ulBlockSize;//Memory pool size. Memory pool is make of memory unit.
+    unsigned long currentpos;
+    unsigned long tc_startpos;
+    unsigned long va_startpos;
 
 public:
-    CVboPool(unsigned long lUnitNum = 50, unsigned long lUnitSize = 480000 );
+    CVboPool(unsigned long size);
     ~CVboPool();
 
-    void* Alloc(unsigned long ulSize, bool bUseMemPool = true); //Allocate memory unit
-    void Free( void* p );                                   //Free memory unit
+    int alloc(unsigned long size, void ** vpos, void ** tcpos, void ** vapos  ); //Allocate memory unit
+    int expand( unsigned long addsize,void ** vpos, void **tcpos, void **vapos  );                                   //Free memory unit
 
     void unMap();
     void reMap();
 	GLuint getVboId(){ return _vertexBuffer; }
+    intptr_t getOffset( void* address ); //{ return address-(intptr_t)m_pMemBlock; }
 };
 
-CVboPool::CVboPool(unsigned long ulUnitNum,unsigned long ulUnitSize) :
-    m_pMemBlock(NULL), m_pAllocatedMemBlock(NULL), m_pFreeMemBlock(NULL),
-    m_ulBlockSize(ulUnitNum * (ulUnitSize+sizeof(struct _Unit))),
-    m_ulUnitSize(ulUnitSize)
+CVboPool::CVboPool(unsigned long size )
 {
+    m_ulBlockSize = size * ( sizeof(int)*2 + sizeof(float)*4 + sizeof(float)*4 ) ;
     glGenBuffers(1, &_vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, m_ulBlockSize,NULL,GL_DYNAMIC_DRAW);
-    m_pMemBlock = glMapBufferRange(GL_ARRAY_BUFFER, 0, m_ulBlockSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-    m_ulUnitNum = ulUnitNum;
-    //m_pMemBlock = malloc(m_ulBlockSize);     //Allocate a memory block.
+    m_pMemBlock = (unsigned char *)glMapBufferRange(GL_ARRAY_BUFFER, 0, m_ulBlockSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+    currentpos = 0;
 
-    if(NULL != m_pMemBlock)
-    {
-        for(unsigned long i=0; i<ulUnitNum; i++)  //Link all mem unit . Create linked list.
-        {
-            struct _Unit *pCurUnit = (struct _Unit *)( (char *)m_pMemBlock + i*(ulUnitSize+sizeof(struct _Unit)) );
+    tc_startpos = size * ( sizeof(int)*2);
+    va_startpos = tc_startpos + (size*sizeof(float)*4) ;
 
-            pCurUnit->pPrev = NULL;
-            pCurUnit->pNext = m_pFreeMemBlock;    //Insert the new unit at head.
-
-            if(NULL != m_pFreeMemBlock)
-            {
-                m_pFreeMemBlock->pPrev = pCurUnit;
-            }
-            m_pFreeMemBlock = pCurUnit;
-        }
-    }
 }
 
 void CVboPool::unMap()
@@ -124,24 +102,8 @@ void CVboPool::reMap()
     {
         printf("???\n");
     }
-#if 0
-    if(NULL != m_pMemBlock)
-    {
-        for(unsigned long i=0; i<m_ulUnitNum; i++)  //Link all mem unit . Create linked list.
-        {
-            struct _Unit *pCurUnit = (struct _Unit *)( (char *)m_pMemBlock + i*(m_ulUnitSize+sizeof(struct _Unit)) );
-
-            pCurUnit->pPrev = NULL;
-            pCurUnit->pNext = m_pFreeMemBlock;    //Insert the new unit at head.
-
-            if(NULL != m_pFreeMemBlock)
-            {
-                m_pFreeMemBlock->pPrev = pCurUnit;
-            }
-            m_pFreeMemBlock = pCurUnit;
-        }
-    }
-#endif
+    currentpos = 0;
+    prepos = NULL;
 }
 
 
@@ -152,63 +114,55 @@ CVboPool::~CVboPool()
     glDeleteBuffers(1,&_vertexBuffer);
 }
 
-void* CVboPool::Alloc(unsigned long ulSize, bool bUseMemPool)
+int CVboPool::alloc(unsigned long size, void ** vpos, void ** tcpos, void ** vapos  )
 {
-    if(    ulSize > m_ulUnitSize || false == bUseMemPool ||
-        NULL == m_pMemBlock   || NULL == m_pFreeMemBlock)
+    if( (currentpos* ( sizeof(int)))  >= tc_startpos ||
+        tc_startpos + (currentpos*sizeof(float)*2)  >= va_startpos ||
+        va_startpos + (currentpos*sizeof(float)*2) >= m_ulBlockSize )
     {
-        return NULL; //malloc(ulSize);
+        printf("bad alloc %X,%X,%d\n",prepos,*vpos,size);
+        return -1;
     }
 
-    //Now FreeList isn`t empty
-    struct _Unit *pCurUnit = m_pFreeMemBlock;
-    m_pFreeMemBlock = pCurUnit->pNext;            //Get a unit from free linkedlist.
-    if(NULL != m_pFreeMemBlock)
-    {
-        m_pFreeMemBlock->pPrev = NULL;
-    }
-
-    pCurUnit->pNext = m_pAllocatedMemBlock;
-
-    if(NULL != m_pAllocatedMemBlock)
-    {
-        m_pAllocatedMemBlock->pPrev = pCurUnit;
-    }
-    m_pAllocatedMemBlock = pCurUnit;
-
-    return (void *)((char *)pCurUnit + sizeof(struct _Unit) );
+    *vpos = m_pMemBlock + (currentpos* ( sizeof(int)*2)) ;
+    *tcpos = m_pMemBlock + tc_startpos + (currentpos*sizeof(float)*4) ;
+    *vapos = m_pMemBlock + va_startpos + (currentpos*sizeof(float)*4) ;
+    prepos = *vpos;
+    currentpos += size;
+//    printf("alloc %X,%X,%X,%X,%d,%d\n",*vpos,*tcpos,*vapos,prepos,size,currentpos);
+    return 0;
 }
 
-void CVboPool::Free( void* p )
+int CVboPool::expand( unsigned long addsize,void ** vpos, void **tcpos, void **vapos  )
 {
-    if(m_pMemBlock<p && p<(void *)((char *)m_pMemBlock + m_ulBlockSize) )
+    if( (currentpos += addsize) >= tc_startpos || tc_startpos + currentpos + addsize >= va_startpos || va_startpos + currentpos + addsize >= m_ulBlockSize )
     {
-        struct _Unit *pCurUnit = (struct _Unit *)((char *)p - sizeof(struct _Unit) );
 
-        m_pAllocatedMemBlock = pCurUnit->pNext;
-        if(NULL != m_pAllocatedMemBlock)
-        {
-            m_pAllocatedMemBlock->pPrev = NULL;
-        }
-
-        pCurUnit->pNext = m_pFreeMemBlock;
-        if(NULL != m_pFreeMemBlock)
-        {
-             m_pFreeMemBlock->pPrev = pCurUnit;
-        }
-
-        m_pFreeMemBlock = pCurUnit;
+        printf("bad expand %X,%X,%d\n",prepos,*vpos,addsize);
+        return -1;
     }
-    else
+
+    // OverWitten!
+    if( *vpos != prepos )
     {
-        //free(p);
+        int a=0;
+        printf("bad expand %X,%X,%d\n",prepos,*vpos,addsize);
+    }else{
+        currentpos += addsize;
+//        printf("expand %X,%X,%d,%d\n",prepos,*vpos,addsize,currentpos);
     }
+}
+
+intptr_t CVboPool::getOffset( void* address )
+{
+//    printf("getOffset %X-%X=%X\n",address,m_pMemBlock,(intptr_t)address-(intptr_t)m_pMemBlock);
+    return (intptr_t)address-(intptr_t)m_pMemBlock;
 }
 
 CVboPool * g_pool;
 
 int YglInitVertexBuffer( int initsize ) {
-    g_pool = new CVboPool( 256, 480000 );
+    g_pool = new CVboPool(initsize);
 }
 
 void YglDeleteVertexBuffer()
@@ -218,20 +172,22 @@ void YglDeleteVertexBuffer()
 
 int YglUnMapVertexBuffer() {
     g_pool->unMap();
+    //printf("================= unMap ====================\n");
 }
 
 int YglMapVertexBuffer() {
     g_pool->reMap();
+    //printf("================= reMap ====================\n");
 }
 
-void * YglGetVertexBuffer( int size)
+int YglGetVertexBuffer( int size, void ** vpos, void **tcpos, void **vapos )
 {
-    return g_pool->Alloc(size);
+    return g_pool->alloc(size,vpos,tcpos,vapos);
 }
 
-int YglFreeVertexBuffer( void * p)
+int YglExpandVertexBuffer( int addsize, void ** vpos, void **tcpos, void **vapos )
 {
-    g_pool->Free(p);
+    g_pool->expand(addsize,vpos,tcpos,vapos);
 }
 
 int YglUserDirectVertexBuffer()
@@ -242,6 +198,11 @@ int YglUserDirectVertexBuffer()
 int YglUserVertexBuffer()
 {
 	 glBindBuffer(GL_ARRAY_BUFFER, g_pool->getVboId() );
+}
+
+intptr_t YglGetOffset( void* address )
+{
+    return g_pool->getOffset(address);
 }
 
 
