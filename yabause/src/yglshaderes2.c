@@ -58,31 +58,36 @@ static GLuint _prgid[PG_MAX] ={0};
  *  Normal Draw
  * ----------------------------------------------------------------------------------*/
 const GLchar Yglprg_normal_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;    \n"
       "uniform mat4 u_texMatrix;    \n"
-      "attribute vec4 a_position;   \n"
-      "attribute vec4 a_texcoord;   \n"
-      "varying   vec4 v_texcoord;     \n"
+      "layout (location = 0) in vec4 a_position;   \n"
+      "layout (location = 1) in vec4 a_texcoord;   \n"
+      "out  highp vec4 v_texcoord;     \n"
       "void main()                  \n"
       "{                            \n"
       "   gl_Position = a_position*u_mvpMatrix; \n"
       "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
-      "   v_texcoord.s  = v_texcoord.s/2048.0; \n"
-      "   v_texcoord.t  = v_texcoord.t/1024.0; \n"
+      "   v_texcoord.s  = v_texcoord.s; ///2048.0; \n"
+      "   v_texcoord.t  = v_texcoord.t; ///1024.0; \n"
       "} ";
 const GLchar * pYglprg_normal_v[] = {Yglprg_normal_v, NULL};
 
 const GLchar Yglprg_normal_f[] =
+      "#version 300 es \n"
       "precision highp float;                            \n"
-      "varying vec4 v_texcoord;                            \n"
+      "in highp vec4 v_texcoord;                            \n"
       "uniform sampler2D s_texture;                        \n"
       "uniform vec4 u_color_offset;    \n"
+      "out vec4 fragColor;            \n"
       "void main()                                         \n"
       "{                                                   \n"
-      "  vec2 addr = v_texcoord.st;                        \n"
-      "  vec4 txcol = texture2D( s_texture, addr );         \n"
+      "  ivec2 addr; \n"
+      "  addr.x = int(v_texcoord.x);                        \n"
+      "  addr.y = int(v_texcoord.y);                        \n"
+      "  vec4 txcol = texelFetch( s_texture, addr,0 );         \n"
       "  if(txcol.a > 0.0)\n                                 "
-      "     gl_FragColor = clamp(txcol+u_color_offset,vec4(0.0),vec4(1.0));\n                         "
+      "     fragColor = clamp(txcol+u_color_offset,vec4(0.0),vec4(1.0));\n                         "
       "  else \n                                            "
       "     discard;\n                                      "
       "}                                                   \n";

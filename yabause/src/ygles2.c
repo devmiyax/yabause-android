@@ -30,7 +30,7 @@
 
 #define PI 3.1415926535897932384626433832795f
 
-
+#define ATLAS_BIAS (0.025f)
 
 void YglScalef(YglMatrix *result, GLfloat sx, GLfloat sy, GLfloat sz)
 {
@@ -1020,18 +1020,18 @@ float * YglQuad(YglSprite * input, YglTexture * output, YglCache * c) {
    */
 
    if (input->flip & 0x1) {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w) - ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x)+ ATLAS_BIAS;
    } else {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x) + 0.5f;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w)-ATLAS_BIAS;
    }
    if (input->flip & 0x2) {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h)-ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y)+ATLAS_BIAS;
    } else {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y)+ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h)-ATLAS_BIAS;
    }
 
    if( c != NULL )
@@ -1182,18 +1182,18 @@ int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors,Yg
    tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0; // these can stay at 0
 
    if (input->flip & 0x1) {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w)-ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x)+ATLAS_BIAS;
    } else {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x)+ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w)-ATLAS_BIAS;
    }
    if (input->flip & 0x2) {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h)-ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y)+0.5f;
    } else {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y)+0.5f;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h)-ATLAS_BIAS;
    }
 
    if( c != NULL )
@@ -1313,18 +1313,18 @@ void YglCachedQuad(YglSprite * input, YglCache * cache) {
   tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0; // these can stay at 0
 
    if (input->flip & 0x1) {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w)-ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x)+ATLAS_BIAS;
    } else {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x)+ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w)-ATLAS_BIAS;
    }
    if (input->flip & 0x2) {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h)-ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y)+ATLAS_BIAS;
    } else {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y)+ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h)-ATLAS_BIAS;
    }
 
 
@@ -1450,18 +1450,18 @@ void YglCacheQuadGrowShading(YglSprite * input, float * colors,YglCache * cache)
   tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0; // these can stay at 0
 
    if (input->flip & 0x1) {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x + input->w)-ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x)+ATLAS_BIAS;
    } else {
-      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x);
-      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w);
+      tmp[0].s = tmp[3].s = tmp[5].s = (float)(x)+ATLAS_BIAS;
+      tmp[1].s = tmp[2].s = tmp[4].s = (float)(x + input->w)-ATLAS_BIAS;
    }
    if (input->flip & 0x2) {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y + input->h)-ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y)+ATLAS_BIAS;
    } else {
-      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y);
-      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h);
+      tmp[0].t = tmp[1].t = tmp[3].t = (float)(y)+ATLAS_BIAS;
+      tmp[2].t = tmp[4].t = tmp[5].t = (float)(y + input->h)-ATLAS_BIAS;
    }
 
    if( input->dst == 1 )
