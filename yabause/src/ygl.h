@@ -1,5 +1,6 @@
 /*  Copyright 2005 Guillaume Duhamel
     Copyright 2005-2006 Theo Berkau
+    Copyright 2011-2015 Shinya Miyamoto(devmiyax)
 
     This file is part of Yabause.
 
