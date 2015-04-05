@@ -162,8 +162,9 @@ int ShaderDrawTest()
  *  Window Operation
  * ----------------------------------------------------------------------------------*/
 const GLchar Yglprg_window_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;    \n"
-      "attribute vec4 a_position;   \n"
+      "layout (location = 0) in vec4 a_position;               \n"
       "void main()                  \n"
       "{                            \n"
       "   gl_Position = a_position*u_mvpMatrix; \n"
@@ -171,10 +172,12 @@ const GLchar Yglprg_window_v[] =
 const GLchar * pYglprg_window_v[] = {Yglprg_window_v, NULL};
 
 const GLchar Yglprg_window_f[] =
+      "#version 300 es \n"
       "precision highp float;                            \n"
+      "out vec4 fragColor;            \n"
       "void main()                                         \n"
       "{                                                   \n"
-      "  gl_FragColor = vec4( 1.0,1.0,1.0,1.0 );\n"
+      "  fragColor = vec4( 1.0,1.0,1.0,1.0 );\n"
       "}                                                   \n";
 const GLchar * pYglprg_window_f[] = {Yglprg_window_f, NULL};
 
@@ -183,7 +186,9 @@ int Ygl_uniformWindow(void * p )
    YglProgram * prg;
    prg = p;
    glUseProgram(prg->prgid );
-   glEnableVertexAttribArray(prg->vertexp);
+   glEnableVertexAttribArray(0);
+   glDisableVertexAttribArray(1);
+   glDisableVertexAttribArray(2);
 
    return 0;
 }
@@ -475,12 +480,13 @@ int Ygl_uniformStartUserClip(void * p )
 {
    YglProgram * prg;
    prg = p;
-#if 0
-   glEnableVertexAttribArray(prg->vertexp);
-   glEnableVertexAttribArray(prg->texcoordp);
+
+   glEnableVertexAttribArray(0);
+   glDisableVertexAttribArray(1);
 
    if( prg->ux1 != -1 )
    {
+
       GLint vertices[12];
       glColorMask( GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE );
       glStencilMask(0xffffffff);
@@ -489,7 +495,7 @@ int Ygl_uniformStartUserClip(void * p )
       glEnable(GL_STENCIL_TEST);
       glStencilFunc(GL_ALWAYS,0x1,0x01);
       glStencilOp(GL_REPLACE,GL_REPLACE,GL_REPLACE);
-      glDisable(GL_TEXTURE_2D);
+      //glDisable(GL_TEXTURE_2D);
 
       // render
       vertices[0] = (int)((float)prg->ux1 * vdp1wratio);
@@ -506,8 +512,8 @@ int Ygl_uniformStartUserClip(void * p )
       vertices[10] = (int)((float)prg->ux1 * vdp1wratio);
       vertices[11] = (int)((float)(prg->uy2+1) * vdp1hratio);
 
-      glUniformMatrix4fv( prg->mtxModelView, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxModelView );
-      glUniformMatrix4fv( prg->mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
+      glUniformMatrix4fv( prg->mtxModelView, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxModelView.m[0][0]  );
+      //glUniformMatrix4fv( prg->mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
       glVertexAttribPointer(prg->vertexp,2, GL_INT,GL_FALSE, 0, (GLvoid*)vertices );
 
       glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -530,7 +536,12 @@ int Ygl_uniformStartUserClip(void * p )
    }else{
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
-#endif
+
+   glEnableVertexAttribArray(0);
+   glEnableVertexAttribArray(1);
+
+   //glDisable(GL_STENCIL_TEST);
+
    return 0;
 }
 
@@ -538,12 +549,12 @@ int Ygl_cleanupStartUserClip(void * p ){return 0;}
 
 int Ygl_uniformEndUserClip(void * p )
 {
- #if 0
+
    YglProgram * prg;
    prg = p;
    glDisable(GL_STENCIL_TEST);
    glStencilFunc(GL_ALWAYS,0,0xFF);
-#endif
+
    return 0;
 }
 
@@ -555,12 +566,11 @@ int Ygl_uniformStartVDP2Window(void * p )
    YglProgram * prg;
    prg = p;
 
-#if 0
    glEnable(GL_STENCIL_TEST);
    glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 
-   glEnableVertexAttribArray(prg->vertexp);
-   glEnableVertexAttribArray(prg->texcoordp);
+   //glEnableVertexAttribArray(0);
+   //glDisableVertexAttribArray(1);
 
 
    if( prg->bwin0 && !prg->bwin1 )
@@ -592,7 +602,7 @@ int Ygl_uniformStartVDP2Window(void * p )
 
       }
    }
-#endif
+
    return 0;
 }
 
@@ -600,12 +610,12 @@ int Ygl_cleanupStartVDP2Window(void * p ){return 0;}
 
 int Ygl_uniformEndVDP2Window(void * p )
 {
- #if 0
+
    YglProgram * prg;
    prg = p;
    glDisable(GL_STENCIL_TEST);
    glStencilFunc(GL_ALWAYS,0,0xFF);
- #endif
+
    return 0;
 }
 
@@ -779,7 +789,7 @@ int YglProgramInit()
       return -1;
 
    //
-   _prgid[PG_VFP1_STARTUSERCLIP] = _prgid[PG_NORMAL];
+
    _prgid[PG_VFP1_ENDUSERCLIP] = _prgid[PG_NORMAL];
    _prgid[PG_VDP2_ADDBLEND] = _prgid[PG_NORMAL];
 
@@ -847,6 +857,8 @@ int YglProgramInit()
    _Ygl->windowpg.cleanupUniform  = Ygl_cleanupNormal;
    _Ygl->windowpg.vertexp         = glGetAttribLocation(_prgid[PG_WINDOW],(const GLchar *)"a_position");
    _Ygl->windowpg.mtxModelView    = glGetUniformLocation(_prgid[PG_WINDOW],(const GLchar *)"u_mvpMatrix");
+
+   _prgid[PG_VFP1_STARTUSERCLIP] = _prgid[PG_WINDOW];
 
    return 0;
 }
@@ -943,10 +955,10 @@ int YglProgramChange( YglLevel * level, int prgid )
    {
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformStartUserClip;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupStartUserClip;
-      current->vertexp         = glGetAttribLocation(_prgid[PG_NORMAL],(const GLchar *)"a_position");
-      current->texcoordp       = glGetAttribLocation(_prgid[PG_NORMAL],(const GLchar *)"a_texcoord");
-      current->mtxModelView    = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_mvpMatrix");
-      current->mtxTexture      = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_texMatrix");
+      current->vertexp         = 0;
+      current->texcoordp       = -1;
+      current->mtxModelView    = glGetUniformLocation(_prgid[PG_WINDOW],(const GLchar *)"u_mvpMatrix");
+      current->mtxTexture      = -1; //glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_texMatrix");
    }
    else if( prgid == PG_VFP1_ENDUSERCLIP )
    {
@@ -993,8 +1005,8 @@ int YglProgramChange( YglLevel * level, int prgid )
    {
       level->prg[level->prgcurrent].setupUniform = Ygl_uniformStartVDP2Window;
       level->prg[level->prgcurrent].cleanupUniform = Ygl_cleanupStartVDP2Window;
-      current->vertexp         = glGetAttribLocation(_prgid[PG_NORMAL],(const GLchar *)"a_position");
-      current->texcoordp       = glGetAttribLocation(_prgid[PG_NORMAL],(const GLchar *)"a_texcoord");
+      current->vertexp         = 0;
+      current->texcoordp       = -1;
       current->mtxModelView    = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_mvpMatrix");
       current->mtxTexture      = glGetUniformLocation(_prgid[PG_NORMAL],(const GLchar *)"u_texMatrix");
    }else if( prgid == PG_VDP2_ENDWINDOW )

@@ -612,7 +612,7 @@ int YglGLInit(int width, int height) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-   if( strstr(glGetString(GL_EXTENSIONS),"GL_OES_packed_depth_stencil") != NULL )
+   if( strstr(glGetString(GL_EXTENSIONS),"packed_depth_stencil") != NULL )
    {
       if( _Ygl->rboid_depth != 0 ) glDeleteRenderbuffers(1,&_Ygl->rboid_depth);
       glGenRenderbuffers(1, &_Ygl->rboid_depth);
@@ -759,7 +759,7 @@ int YglInit(int width, int height, unsigned int depth) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-   if( strstr(glGetString(GL_EXTENSIONS),"GL_OES_packed_depth_stencil") != NULL )
+    if( strstr(glGetString(GL_EXTENSIONS),"packed_depth_stencil") != NULL )
    {
       if( _Ygl->rboid_depth != 0 ) glDeleteRenderbuffers(1,&_Ygl->rboid_depth);
       glGenRenderbuffers(1, &_Ygl->rboid_depth);
@@ -1672,7 +1672,6 @@ void YglRenderFrameBuffer( int from , int to ) {
    logwin1 = (Vdp2Regs->WCTLC >> 10) & 0x01;
    winmode    = (Vdp2Regs->WCTLC >> 15 ) & 0x01;
 
-#if 0 // TODO
    if( bwin0 || bwin1 )
    {
       glEnable(GL_STENCIL_TEST);
@@ -1708,7 +1707,6 @@ void YglRenderFrameBuffer( int from , int to ) {
          }
       }
    }
-#endif
 
    // render
    vertices[0] = 0;
@@ -1752,13 +1750,11 @@ void YglRenderFrameBuffer( int from , int to ) {
 	YglUserVertexBuffer();
 #endif
 
-#if 0 // TODO
    if( bwin0 || bwin1 )
    {
       glDisable(GL_STENCIL_TEST);
       glStencilFunc(GL_ALWAYS,0,0xFF);
    }
-#endif
 }
 
 
@@ -1811,7 +1807,7 @@ void YglRender(void) {
 
    cprg = -1;
 
-//   YglSetVdp2Window();
+   YglSetVdp2Window();
 
    GLint	param[1];
    glGetBufferParameteriv( GL_ARRAY_BUFFER, GL_BUFFER_SIZE, param );
