@@ -1545,7 +1545,6 @@ void YglRenderVDP1(void) {
       if( level->prg[j].currentQuad != 0 )
       {
          glUniformMatrix4fv( level->prg[j].mtxModelView, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxModelView.m[0][0] );
-         glUniformMatrix4fv( level->prg[j].mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
 #if USEVBO
 		if( level->prg[j].currentQuad != 0 )
         {
@@ -1591,7 +1590,7 @@ void YglNeedToUpdateWindow()
 
 void YglSetVdp2Window()
 {
-   if( _Ygl->bUpdateWindow )
+   if( _Ygl->bUpdateWindow && (_Ygl->win0_vertexcnt != 0 || _Ygl->win1_vertexcnt != 0 ) )
    {
 
      Ygl_uniformWindow(&_Ygl->windowpg);
@@ -1772,7 +1771,7 @@ void YglRender(void) {
    glClearColor( 0.0f,0.0f,0.0f,1.0f);
    glClearDepthf(0.0f);
    glDepthMask(GL_TRUE);
-   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 
    //glEnable(GL_TEXTURE_2D);
@@ -1807,7 +1806,7 @@ void YglRender(void) {
 
    cprg = -1;
 
-   YglSetVdp2Window();
+  YglSetVdp2Window();
 
    GLint	param[1];
    glGetBufferParameteriv( GL_ARRAY_BUFFER, GL_BUFFER_SIZE, param );
@@ -1848,14 +1847,13 @@ void YglRender(void) {
 
             YglMatrixMultiply(&dmtx, &mtx, &_Ygl->mtxModelView);
             glUniformMatrix4fv( level->prg[j].mtxModelView, 1, GL_FALSE, (GLfloat*) &dmtx.m[0][0] );
-            glUniformMatrix4fv( level->prg[j].mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
 #if USEVBO
 			if( level->prg[j].currentQuad != 0 )
 			{
                 glVertexAttribPointer(level->prg[j].vertexp,2, GL_INT,GL_FALSE, 0, (GLvoid*)YglGetOffset( level->prg[j].quads));
                 glVertexAttribPointer(level->prg[j].texcoordp,4, GL_FLOAT,GL_FALSE, 0, (GLvoid*)YglGetOffset(level->prg[j].textcoords) );
                 if( level->prg[j].vaid != 0 ) { glVertexAttribPointer(level->prg[j].vaid,4, GL_FLOAT,GL_FALSE, 0, (GLvoid*)YglGetOffset(level->prg[j].vertexAttribute) );  }
-                glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad/2);
+                 glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad/2);
 			}
 #else // USEVBO
 			if( level->prg[j].currentQuad != 0 )
@@ -1863,7 +1861,7 @@ void YglRender(void) {
 				glVertexAttribPointer(level->prg[j].vertexp,2,GL_INT, GL_FALSE,0,(GLvoid *)level->prg[j].quads );
 				glVertexAttribPointer(level->prg[j].texcoordp,4,GL_FLOAT,GL_FALSE,0,(GLvoid *)level->prg[j].textcoords );
 				if( level->prg[j].vaid != 0 ) { glVertexAttribPointer(level->prg[j].vaid,4, GL_FLOAT, GL_FALSE, 0, level->prg[j].vertexAttribute); }
-				glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad/2);
+                glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad/2);
 			}
 #endif // USEVBO
             if( level->prg[j].cleanupUniform )

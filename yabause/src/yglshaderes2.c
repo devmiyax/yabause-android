@@ -152,7 +152,6 @@ int ShaderDrawTest()
    glEnableVertexAttribArray(texcoordp);
 
    glUniformMatrix4fv( mtxModelView, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxModelView/*mtx*/.m[0][0] );
-   glUniformMatrix4fv( mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
 
    glVertexAttribPointer(vertexp,3, GL_FLOAT,GL_FALSE, 0, (const GLvoid*) vec );
    glVertexAttribPointer(texcoordp,2, GL_FLOAT,GL_FALSE, 0, (const GLvoid*)tex );
@@ -194,7 +193,6 @@ int Ygl_uniformWindow(void * p )
    glEnableVertexAttribArray(0);
    glDisableVertexAttribArray(1);
    glDisableVertexAttribArray(2);
-
    return 0;
 }
 
@@ -518,7 +516,6 @@ int Ygl_uniformStartUserClip(void * p )
       vertices[11] = (int)((float)(prg->uy2+1) * vdp1hratio);
 
       glUniformMatrix4fv( prg->mtxModelView, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxModelView.m[0][0]  );
-      //glUniformMatrix4fv( prg->mtxTexture, 1, GL_FALSE, (GLfloat*) &_Ygl->mtxTexture.m[0][0] );
       glVertexAttribPointer(prg->vertexp,2, GL_INT,GL_FALSE, 0, (GLvoid*)vertices );
 
       glDrawArrays(GL_TRIANGLES, 0, 6);
