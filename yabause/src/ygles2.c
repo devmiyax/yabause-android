@@ -1590,7 +1590,12 @@ void YglNeedToUpdateWindow()
 
 void YglSetVdp2Window()
 {
-   if( _Ygl->bUpdateWindow && (_Ygl->win0_vertexcnt != 0 || _Ygl->win1_vertexcnt != 0 ) )
+    int bwin0,bwin1,logwin0,logwin1,winmode;
+   //if( _Ygl->bUpdateWindow && (_Ygl->win0_vertexcnt != 0 || _Ygl->win1_vertexcnt != 0 ) )
+
+    bwin0 = (Vdp2Regs->WCTLC >> 9) &0x01;
+    bwin1 = (Vdp2Regs->WCTLC >> 11) &0x01;
+   if( (_Ygl->win0_vertexcnt != 0 || _Ygl->win1_vertexcnt != 0 )  )
    {
 
      Ygl_uniformWindow(&_Ygl->windowpg);
@@ -1602,8 +1607,8 @@ void YglSetVdp2Window()
      glDisable(GL_TEXTURE_2D);
      glDisable(GL_DEPTH_TEST);
 
-     glClearStencil(0);
-     glClear(GL_STENCIL_BUFFER_BIT);
+     //glClearStencil(0);
+     //glClear(GL_STENCIL_BUFFER_BIT);
      glEnable(GL_STENCIL_TEST);
      glDisable(GL_TEXTURE_2D);
 
@@ -1771,7 +1776,7 @@ void YglRender(void) {
    glClearColor( 0.0f,0.0f,0.0f,1.0f);
    glClearDepthf(0.0f);
    glDepthMask(GL_TRUE);
-   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
 
    //glEnable(GL_TEXTURE_2D);
@@ -1806,11 +1811,7 @@ void YglRender(void) {
 
    cprg = -1;
 
-  YglSetVdp2Window();
-
-   GLint	param[1];
-   glGetBufferParameteriv( GL_ARRAY_BUFFER, GL_BUFFER_SIZE, param );
-
+   YglSetVdp2Window();
 
    YglTranslatef(&mtx,0.0f,0.0f,-1.0f);
 

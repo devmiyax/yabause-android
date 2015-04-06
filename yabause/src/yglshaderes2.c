@@ -77,8 +77,8 @@ const GLchar Yglprg_normal_f[] =
       "#version 300 es \n"
       "precision highp float;                            \n"
       "in highp vec4 v_texcoord;                            \n"
-      "uniform sampler2D s_texture;                        \n"
       "uniform vec4 u_color_offset;    \n"
+      "uniform sampler2D s_texture;                        \n"
       "out vec4 fragColor;            \n"
       "void main()                                         \n"
       "{                                                   \n"
@@ -92,14 +92,16 @@ const GLchar Yglprg_normal_f[] =
       "     discard;\n                                      "
       "}                                                   \n";
 const GLchar * pYglprg_normal_f[] = {Yglprg_normal_f, NULL};
+static int id_normal_s_texture = -1;
 
 int Ygl_uniformNormal(void * p )
 {
+
    YglProgram * prg;
    prg = p;
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
-   glUniform1i(glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"s_texture"), 0);
+   glUniform1i(id_normal_s_texture, 0);
    glUniform4fv(prg->color_offset,1,prg->color_offset_val);
    return 0;
 }
@@ -207,34 +209,37 @@ int Ygl_cleanupWindow(void * p )
  *  VDP1 Normal Draw
  * ----------------------------------------------------------------------------------*/
 const GLchar Yglprg_vdp1_normal_v[] =
+      "#version 300 es \n"
       "uniform mat4 u_mvpMatrix;    \n"
-      "uniform mat4 u_texMatrix;    \n"
-      "attribute vec4 a_position;   \n"
-      "attribute vec4 a_texcoord;   \n"
-      "varying   vec4 v_texcoord;     \n"
+      "layout (location = 0) in vec4 a_position;   \n"
+      "layout (location = 1) in vec4 a_texcoord;   \n"
+      "out   vec4 v_texcoord;     \n"
       "void main()                  \n"
       "{                            \n"
       "   gl_Position = a_position*u_mvpMatrix; \n"
-      "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
+      "   v_texcoord  = a_texcoord; \n"
       "   v_texcoord.s  = v_texcoord.s/2048.0; \n"
       "   v_texcoord.t  = v_texcoord.t/1024.0; \n"
       "} ";
 const GLchar * pYglprg_vdp1_normal_v[] = {Yglprg_vdp1_normal_v, NULL};
 
 const GLchar Yglprg_vpd1_normal_f[] =
+      "#version 300 es \n"
       "precision highp float;                            \n"
-      "varying vec4 v_texcoord;                            \n"
+      "in vec4 v_texcoord;                            \n"
       "uniform sampler2D s_texture;                        \n"
+      "out vec4 fragColor;            \n"
       "void main()                                         \n"
       "{                                                   \n"
       "  vec2 addr = v_texcoord.st;                        \n"
       "  addr.s = addr.s / (v_texcoord.q);                 \n"
       "  addr.t = addr.t / (v_texcoord.q);                 \n"
-      "  vec4 FragColor = texture2D( s_texture, addr );      \n"
+      "  vec4 FragColor = texture( s_texture, addr );      \n"
       "  if( FragColor.a == 0.0 ) discard;                \n"
-      "  gl_FragColor = FragColor;\n "
+      "  fragColor = FragColor;\n "
       "}                                                   \n";
 const GLchar * pYglprg_vdp1_normal_f[] = {Yglprg_vpd1_normal_f, NULL};
+static int id_vdp1_normal_s_texture = -1;
 
 int Ygl_uniformVdp1Normal(void * p )
 {
@@ -242,7 +247,7 @@ int Ygl_uniformVdp1Normal(void * p )
    prg = p;
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
-   glUniform1i(glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"s_texture"), 0);
+   glUniform1i(id_vdp1_normal_s_texture, 0);
    return 0;
 }
 
@@ -294,6 +299,7 @@ const GLchar Yglprg_vdp1_gouraudshading_f[] =
       "  fragColor.a = spriteColor.a;                                        \n"
       "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_f[] = {Yglprg_vdp1_gouraudshading_f, NULL};
+static int id_vdp1_normal_s_sprite = -1;
 
 int Ygl_uniformGlowShading(void * p )
 {
@@ -301,12 +307,10 @@ int Ygl_uniformGlowShading(void * p )
    prg = p;
    glEnableVertexAttribArray(prg->vertexp);
    glEnableVertexAttribArray(prg->texcoordp);
-   glUniform1i(glGetUniformLocation(prg->prgid, (const GLchar *)"u_sprite"), 0);
+   glUniform1i(id_vdp1_normal_s_sprite, 0);
    if( prg->vertexAttribute != NULL )
    {
       glEnableVertexAttribArray(prg->vaid);
-      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, prg->vertexAttribute);
-      //glVertexAttribPointer(prg->vaid,4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(prg->maxQuad*sizeof(int)*sizeof(float)*2));
    }
    return 0;
 }
@@ -413,40 +417,46 @@ static int id_hf_fbowidth;
 static int id_hf_fboheight;
 
 const GLchar Yglprg_vdp1_halftrans_v[] =
-      "uniform mat4 u_mvpMatrix;                \n"
-      "uniform mat4 u_texMatrix;                \n"
-      "attribute vec4 a_position;               \n"
-      "attribute vec4 a_texcoord;               \n"
-      "varying   vec4 v_texcoord;               \n"
-      "void main() {                            \n"
-      "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
-      "   v_texcoord.s  = v_texcoord.s/2048.0; \n"
-      "   v_texcoord.t  = v_texcoord.t/1024.0; \n"
-      "   gl_Position = a_position*u_mvpMatrix; \n"
-      "}\n";
+        "#version 300 es \n"
+        "uniform mat4 u_mvpMatrix;                \n"
+        "layout (location = 0) in vec4 a_position;               \n"
+        "layout (location = 1) in vec4 a_texcoord;               \n"
+        "layout (location = 2) in vec4 a_grcolor;                \n"
+        "out  vec4 v_texcoord;               \n"
+        "out  vec4 v_vtxcolor;               \n"
+        "void main() {                            \n"
+        "   v_vtxcolor  = a_grcolor;              \n"
+        "   v_texcoord  = a_texcoord/*u_texMatrix*/; \n"
+        "   v_texcoord.s  = v_texcoord.s/2048.0; \n"
+        "   v_texcoord.t  = v_texcoord.t/1024.0; \n"
+        "   gl_Position = a_position*u_mvpMatrix; \n"
+        "}\n";
+
 const GLchar * pYglprg_vdp1_halftrans_v[] = {Yglprg_vdp1_halftrans_v, NULL};
 
 const GLchar Yglprg_vdp1_halftrans_f[] =
+      "#version 300 es \n"
       "precision highp float;                                                                     \n"
       "uniform sampler2D u_sprite;                                                                  \n"
       "uniform sampler2D u_fbo;                                                                     \n"
       "uniform int u_fbowidth;                                                                      \n"
       "uniform int u_fbohegiht;                                                                     \n"
-      "varying vec4 v_texcoord;                                                                     \n"
+      "in vec4 v_texcoord;                                                                     \n"
+      "out vec4 fragColor; \n "
       "void main() {                                                                                \n"
       "  vec2 addr = v_texcoord.st;                                                                 \n"
       "  vec2 faddr = vec2( gl_FragCoord.x/float(u_fbowidth), gl_FragCoord.y/float(u_fbohegiht));   \n"
       "  addr.s = addr.s / (v_texcoord.q);                                                          \n"
       "  addr.t = addr.t / (v_texcoord.q);                                                          \n"
-      "  vec4 spriteColor = texture2D(u_sprite,addr);                                               \n"
+      "  vec4 spriteColor = texture(u_sprite,addr);                                               \n"
       "  if( spriteColor.a == 0.0 ) discard;                                                          \n"
-      "  vec4 fboColor    = texture2D(u_fbo,faddr);                                                 \n"
+      "  vec4 fboColor    = texture(u_fbo,faddr);                                                 \n"
       "  if( fboColor.a > 0.0 && spriteColor.a > 0.0 )                                              \n"
       "  {                                                                                          \n"
-      "    gl_FragColor = spriteColor*0.5 + fboColor*0.5;                                           \n"
-      "    gl_FragColor.a = fboColor.a;                                                             \n"
+      "    fragColor = spriteColor*0.5 + fboColor*0.5;                                           \n"
+      "    fragColor.a = fboColor.a;                                                             \n"
       "  }else{                                                                                     \n"
-      "    gl_FragColor = spriteColor;                                                              \n"
+      "    fragColor = spriteColor;                                                              \n"
       "  }                                                                                          \n"
       "}\n";
 const GLchar * pYglprg_vdp1_halftrans_f[] = {Yglprg_vdp1_halftrans_f, NULL};
@@ -790,6 +800,7 @@ int YglProgramInit()
    if( YglInitShader( PG_NORMAL, pYglprg_normal_v, pYglprg_normal_f ) != 0 )
       return -1;
 
+    id_normal_s_texture = glGetUniformLocation(_prgid[PG_NORMAL], (const GLchar *)"s_texture");
    //
 
    _prgid[PG_VFP1_ENDUSERCLIP] = _prgid[PG_NORMAL];
@@ -800,11 +811,16 @@ int YglProgramInit()
    if( YglInitShader( PG_VDP1_NORMAL, pYglprg_vdp1_normal_v, pYglprg_vdp1_normal_f ) != 0 )
       return -1;
 
+   id_vdp1_normal_s_texture = glGetUniformLocation(_prgid[PG_VDP1_NORMAL], (const GLchar *)"s_texture");
+
+
    printf("PG_VFP1_GOURAUDSAHDING\n");
 
    //
    if( YglInitShader( PG_VFP1_GOURAUDSAHDING, pYglprg_vdp1_gouraudshading_v, pYglprg_vdp1_gouraudshading_f ) != 0 )
       return -1;
+
+   id_vdp1_normal_s_sprite = glGetUniformLocation(_prgid[PG_VFP1_GOURAUDSAHDING], (const GLchar *)"u_sprite");
 
    printf("PG_VDP2_DRAWFRAMEBUFF --START--\n");
 
